@@ -1,0 +1,15 @@
+<html>
+  {{template "header"}}
+<body>
+<form id="registerForm" method="POST" action="register.htm"  >
+    <input id="user_name" name="user_name" placeholder="用户名"/>
+    <input id="password" name="pasword" placeholder="密码"/>
+    <input id="password_again" name="pasword_again" placeholder="密码"/>
+    <input id="mobile" name="mobile" placeholder="手机号"/>
+    {{.Captcha.CreateHtml}} 
+    <input id="captcha" name="captcha" placeholder="验证码"/>
+    <input type="submit" value="注册"/>
+    <input type="button" value="重置"/>
+</form>
+</body>
+</html>
