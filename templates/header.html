@@ -2,12 +2,20 @@
 <head>
     <title>金修网络</title>
     <script src="js/jquery-3.2.1.min.js"/></script>
+    <script src="js/main.js"/></script>
 </head>
 <body>
-    <div id="nav"> 
+    <div class="nav1"> 
         <div>
             <a href="login.htm"><span>登录</span></a>
             <a href="register.htm"><span>注册</span></a>
             <a href="user/account/{{.i.Id}}"><span>我的账户</span></a>
         </div>
     </div>
+<div class="nav2">
+<div class="nav2left"></div>
+<div class="nav2right">
+    <input type="text" placeholder="高手" name="searchX" />
+    <input type="button" value="高手搜索" />
+</div>
+</div>

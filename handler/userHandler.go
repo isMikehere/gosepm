@@ -21,7 +21,7 @@ import (
 
 //hangers
 //登录跳转
-func LoginGetHandler(sess session.Store, ctx *macaron.Context, x *xorm.Engine, log *log.Logger) {
+func LoginGetHandler(sess session.Store, ctx *macaron.Context, x *xorm.Engine) {
 
 	if sess.Get("user") != nil {
 		user := sess.Get("user").(model.User)
@@ -276,4 +276,28 @@ func listMyFollowers(s *xorm.Session, log *log.Logger, followedId int64) (bool, 
 		log.Printf("查询异常：%s", err.Error())
 		return false, nil
 	}
+}
+
+/**
+查找高手
+**/
+func SearchXUserHandler(ctx *macaron.Context, x *xorm.Engine) {
+	name := ctx.Params("name")
+	users := make([]*model.User, 0)
+	log.Printf("%s", name)
+	if err := x.Where("nick_name like ?", "%"+name+"%").Limit(5, 0).Find(&users); err == nil {
+		log.Print(users)
+		ctx.JSON(200, users)
+	} else {
+		ctx.JSON(200, nil)
+	}
+}
+
+/**
+统计一个用户对订阅量
+**/
+func countFollowNumbers(s *xorm.Session, uid int64) int64 {
+	c1, _ := s.Where("followed_id=?", uid).Count(new(model.UserFollow))
+	c2, _ := s.Where("followed_id=?", uid).Count(new(model.UserFollowHistory))
+	return c1 + c2
 }

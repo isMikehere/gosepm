@@ -40,7 +40,7 @@ func GetRedisStock(client *redis.Client, stockCode string) *model.Stock {
 /**
 设置股票
 ***/
-func SetRedisStock(client *redis.Client, s model.Stock) {
+func SetRedisStock(client *redis.Client, s *model.Stock) {
 	bs, _ := json.Marshal(s)
 	client.HSet(model.R_KEY_STOCKS, s.StockCode, string(bs))
 }
@@ -62,11 +62,7 @@ func GetRedisUser(client *redis.Client, uid int64) *model.User {
 /**
 设置用户
 ***/
-func SetRedisUser(client *redis.Client, u model.User) {
+func SetRedisUser(client *redis.Client, u *model.User) {
 	bs, _ := json.Marshal(u)
 	client.HSet(model.R_KEY_USERS, strconv.Itoa(int(u.Id)), string(bs))
-}
-
-func SetTest(client *redis.Client) {
-	client.Set("name", "mike", 0)
 }

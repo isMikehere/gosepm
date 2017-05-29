@@ -312,11 +312,11 @@ func (job *MyJob) J_DailyRankCalc() {
 	defer session.Close()
 
 	//持仓中最大收益率股票
-	earningSql := "SELECT  ors.user_id, ors.stock_code,s.stock_name, (cs.current_price-ors.trans_price ) / ors.trans_price earning_rate" +
+	earningSql := "SELECT ors.user_id, ors.stock_code,s.stock_name, (cs.current_price-ors.trans_price ) / ors.trans_price earning_rate" +
 		",date_format(curdate(),'%Y-%m-%d') day " +
 		"FROM  (SELECT user_id, stock_code, sum(stock_number) stock_number, trans_price FROM stock_holding " +
 		"WHERE holding_status = 1 AND date_format(trans_time,'%Y-%m-%d')= date_format(curdate() ,'%Y-%m-%d') " +
-		" GROUP BY user_id, stock_code, trans_price  ) ors " +
+		" GROUP BY user_id, stock_code, trans_price ) ors " +
 		"LEFT JOIN  current_stock_detail cs  ON ors.stock_code = cs.stock_code" +
 		"LEFT JOIN  stock s ON ors.stock_code = s.stock_code" +
 		"GROUP BY  ors.user_id,ors.stock_code" +
@@ -331,6 +331,7 @@ func (job *MyJob) J_DailyRankCalc() {
 			has, err := session.Sql(earningSql, userAccount.UserId, model.RANK_SIZE).Get(&dayRank)
 			if err == nil {
 				if has {
+					dayRank.TotalFollow = countFollowNumbers(session, dayRank.UserId)
 					dayRanks[i] = dayRank
 					i++
 				}
@@ -437,6 +438,7 @@ func (job *MyJob) J_WeeklyRankCalc() {
 			has, err := session.Sql(earningSql, userAccount.UserId).Get(&weekRank)
 			if err == nil {
 				if has {
+					weekRank.TotalFollow = countFollowNumbers(session, weekRank.UserId)
 					dailyRanks[i] = weekRank
 					i++
 				}
@@ -499,6 +501,7 @@ func (job *MyJob) J_MonthlyRankCalc() {
 			has, err := session.Sql(earningSql, userAccount.UserId).Get(&monthRank)
 			if err == nil {
 				if has {
+					monthRank.TotalFollow = countFollowNumbers(session, monthRank.UserId)
 					monthRanks[i] = monthRank
 					i++
 				}

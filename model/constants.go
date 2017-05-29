@@ -4,7 +4,7 @@ import "time"
 
 const (
 	DriverOfMysql     = "mysql"
-	DataSourceOfMysql = "root:root@tcp(127.0.0.1:3306)/sepm?parseTime=true"
+	DataSourceOfMysql = "root:zhsepm!@#$%@tcp(106.14.112.157:3306)/sepm?parseTime=true"
 )
 
 const (

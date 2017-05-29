@@ -15,10 +15,10 @@ import (
 	"github.com/go-macaron/cache"
 	"github.com/go-macaron/captcha"
 	"github.com/go-macaron/session"
+	redis "github.com/go-redis/redis"
 	"github.com/go-xorm/core"
 	"github.com/go-xorm/xorm"
 	macaron "gopkg.in/macaron.v1"
-	redis "gopkg.in/redis.v2"
 )
 
 var engine *xorm.Engine
@@ -155,7 +155,7 @@ func webgo() {
 	m.Get("/logout.htm", handler.LogoutHandler)
 	m.Get("/register.htm", handler.RegisterGetHandler)
 	m.Post("/register.htm", binding.Bind(model.User{}), handler.RegisterPostHandler)
-	m.Get("/test.htm", indexHandler)
+	m.Get("/index.htm", indexHandler)
 
 	//用户
 	m.Group("/user", func() {
@@ -163,6 +163,7 @@ func webgo() {
 		m.Get("/update/:id", handler.UserUpdateGetHandler)
 		m.Put("/update/:id", binding.Bind(model.User{}), handler.UserUpdateSaveHandler)
 		m.Post("/update/:id", binding.Bind(model.User{}), handler.UserUpdateSaveHandler)
+		m.Get("/search/:name", handler.SearchXUserHandler)
 		m.Group("/account", func() {
 			m.Get("/:id", handler.UserAccountHandler)
 		})
@@ -196,22 +197,24 @@ func webgo() {
 	m.Run()
 }
 
-func indexHandler(ctx *macaron.Context) {
-	// user := new(model.User)
-	// user.NickName = "mikke"
-	// stocks := make([]*model.Stock, 2)
-	// stock := new(model.Stock)
-	// stock2 := new(model.Stock)
-	// stock.StockCode = "00001"
-	// stock.StockName = "中国平安"
-	// stock2.StockCode = "00002"
-	// stock2.StockName = "中国移动"
-	// stocks[0] = stock
-	// stocks[1] = stock2
-	// var data = &model.Data{Id: 1, Name: "Mike", User: user, Stocks: stocks}
-	ctx.Data["name"] = "mike"
-	ctx.Data["age"] = 10
-	ctx.HTML(200, "test")
+/**
+首页请求
+**/
+func indexHandler(ctx *macaron.Context, engine *xorm.Engine, redisCli *redis.Client) {
+
+	//日排名
+	dailyRanks := make([]*model.DayRank, 0)
+	engine.Where("1==1").Find(&dailyRanks)
+
+	//周排名
+	weekRanks := make([]*model.WeekRank, 0)
+	if engine.Where("1==1").Find(&weekRanks); len(weekRanks) > 0 {
+
+	}
+
+	//月排名
+	// monthRanks := make([]*model.MonthRank, 0)
+
 }
 
 func initXormEngin() {
@@ -233,14 +236,9 @@ func initRedisClient() {
 
 	//映射redis
 	fmt.Println("new redis-client... ")
-	redisCli = NewRedisClient()
-	if err == nil {
-		m.Map(redisCli)
-		fmt.Println("redis-client init ok")
-	} else {
-		fmt.Println("redis-client init fail")
-		panic(err)
-	}
+	redisCli = handler.NewRedisClient()
+	m.Map(redisCli)
+	fmt.Println("redis-client init ok")
 }
 
 func initLogger() {
@@ -266,7 +264,7 @@ func initCache() {
 	} else {
 		if len(users) > 0 {
 			for _, u := range users {
-				ReSet()
+				handler.SetRedisUser(redisCli, u)
 			}
 		}
 
@@ -281,21 +279,22 @@ func initCache() {
 	} else {
 		if len(stocks) > 0 {
 			for _, s := range stocks {
-				SetRedisStock(s)
+				handler.SetRedisStock(redisCli, s)
 			}
 		}
 	}
 	log.Print("------缓存股票结束---------")
 }
+
 func main() {
 
 	m = macaron.Classic()
 	initLogger()
 	initXormEngin()
 	//数据库同步
-	SyncTable(new(model.User))
+	SyncTable(new(model.UserFollow))
 	initRedisClient()
-	initCache()
+	// initCache()
 	webgo()
 
 	//开启定时任务

@@ -13,6 +13,7 @@ type MonthRank struct {
 	Position    int16
 	StockCode   string    `xorm:"varchar(10) not null"`
 	StockName   string    `xorm:"varchar(32) not null"`
+	TotalFollow int64     `xorm:"int(10)  "` // 累计订阅量
 	Created     time.Time `xorm:"created"`
 	Updated     time.Time `xorm:"updated"`
 	Version     int       `xorm:"version"`
@@ -32,6 +33,7 @@ type WeekRank struct {
 	Week        string    `xorm:"char(6)"`          //201721
 	StockCode   string    `xorm:"varchar(10) not null"`
 	StockName   string    `xorm:"varchar(32) not null"`
+	TotalFollow int64     `xorm:"int(10)  "` // 累计订阅量
 	Created     time.Time `xorm:"created"`
 	Updated     time.Time `xorm:"updated"`
 	Version     int       `xorm:"version"`
@@ -49,6 +51,7 @@ type DayRank struct {
 	Day         string    `xorm:"char(10) not null"` //yyyy-mm-dd
 	StockCode   string    `xorm:"varchar(10) not null"`
 	StockName   string    `xorm:"varchar(32) not null"`
+	TotalFollow int64     `xorm:"int(10)  "` // 累计订阅量
 	Created     time.Time `xorm:"created"`
 	Updated     time.Time `xorm:"updated"`
 	Version     int       `xorm:"version"`
