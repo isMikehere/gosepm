@@ -31,7 +31,7 @@ func IndexHandler(ctx *macaron.Context, engine *xorm.Engine, redisCli *redis.Cli
 	//新闻动态
 	ctx.Data["indexNews"] = IndexNews(engine)
 
-	ctx.HTML(200, "index.html")
+	ctx.HTML(200, "index")
 
 }
 
