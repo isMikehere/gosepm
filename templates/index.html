@@ -1,5 +1,38 @@
 {{template "header"}}
     <div id="body">
-        body
+        <div class="slide">
+
+
+        </div>
+
+        <!--排名 -->
+    <div class="rankDiv">
+          <table css="rankTable">
+               <thead>
+                   <tr>
+                    <td>排名</td>
+                    <td>昵称</td>
+                    <td>股票代码</td>
+                    <td>收益率</td>
+                    <td>累计订阅</td>
+                    <td>操作</td>
+                    </tr>
+                </thead>  
+                <tbody>
+                  {{range .dailyRank }}
+                    <tr>
+                        <td></td>   
+
+                    </tr>
+                    {{end}}  
+                
+                </tbody>    
+          </table>
+          
+
+
+
+    </div>
+
     </div>
  {{template "tail"}}

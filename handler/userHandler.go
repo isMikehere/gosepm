@@ -15,6 +15,7 @@ import (
 
 	"github.com/go-macaron/captcha"
 	"github.com/go-macaron/session"
+	redis "github.com/go-redis/redis"
 	"github.com/go-xorm/xorm"
 	macaron "gopkg.in/macaron.v1"
 )
@@ -300,4 +301,16 @@ func countFollowNumbers(s *xorm.Session, uid int64) int64 {
 	c1, _ := s.Where("followed_id=?", uid).Count(new(model.UserFollow))
 	c2, _ := s.Where("followed_id=?", uid).Count(new(model.UserFollowHistory))
 	return c1 + c2
+}
+
+func GetUserById(x *xorm.Engine, s *redis.Client, id int64) *model.User {
+	if user := GetRedisUser(s, id); user == nil {
+		if has, _ := x.Where("id=?", id).Get(user); has {
+			return user
+		} else {
+			return nil
+		}
+	} else {
+		return user
+	}
 }

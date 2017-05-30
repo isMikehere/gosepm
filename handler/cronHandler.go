@@ -312,14 +312,15 @@ func (job *MyJob) J_DailyRankCalc() {
 	defer session.Close()
 
 	//持仓中最大收益率股票
-	earningSql := "SELECT ors.user_id, ors.stock_code,s.stock_name, (cs.current_price-ors.trans_price ) / ors.trans_price earning_rate" +
+	earningSql := "SELECT ors.user_id, ors.stock_code,u.nick_name,s.stock_name, (cs.current_price-ors.trans_price ) / ors.trans_price earning_rate" +
 		",date_format(curdate(),'%Y-%m-%d') day " +
 		"FROM  (SELECT user_id, stock_code, sum(stock_number) stock_number, trans_price FROM stock_holding " +
 		"WHERE holding_status = 1 AND date_format(trans_time,'%Y-%m-%d')= date_format(curdate() ,'%Y-%m-%d') " +
 		" GROUP BY user_id, stock_code, trans_price ) ors " +
-		"LEFT JOIN  current_stock_detail cs  ON ors.stock_code = cs.stock_code" +
-		"LEFT JOIN  stock s ON ors.stock_code = s.stock_code" +
-		"GROUP BY  ors.user_id,ors.stock_code" +
+		"LEFT JOIN  current_stock_detail cs  ON ors.stock_code = cs.stock_code " +
+		"LEFT JOIN  stock s ON ors.stock_code = s.stock_code " +
+		"LEFT JOIN  user u ON u.id  = ors.user_id " +
+		"GROUP BY  ors.user_id,ors.stock_code " +
 		"ORDER BY  earning_rate DESC " +
 		"LIMIT  ?"
 
@@ -420,13 +421,14 @@ func (job *MyJob) J_WeeklyRankCalc() {
 	defer session.Close()
 
 	//持仓中最大收益率股票
-	earningSql := "SELECT  ors.user_id, ors.stock_code,s.stock_name, (cs.current_price-ors.trans_price ) / ors.trans_price earning_rate" +
+	earningSql := "SELECT  ors.user_id, ors.stock_code,u.nick_name,s.stock_name, (cs.current_price-ors.trans_price ) / ors.trans_price earning_rate" +
 		",yearweek(curdate()) week, date_format(curdate(),'%Y-%m') month " +
 		"FROM  (SELECT user_id, stock_code, sum(stock_number) stock_number, trans_price FROM stock_holding " +
 		"WHERE holding_status = 1 AND user_id = ? GROUP BY user_id, stock_code, trans_price  ) ors " +
-		"LEFT JOIN  current_stock_detail cs  ON ors.stock_code = cs.stock_code" +
-		"LEFT JOIN  stock s  ON ors.stock_code = s.stock_code" +
-		"GROUP BY  ors.user_id,ors.stock_code" +
+		"LEFT JOIN  current_stock_detail cs  ON ors.stock_code = cs.stock_code " +
+		"LEFT JOIN  stock s  ON ors.stock_code = s.stock_code " +
+		"LEFT JOIN  user u ON u.id  = ors.user_id " +
+		"GROUP BY  ors.user_id,ors.stock_code " +
 		"ORDER BY  earning_rate DESC " +
 		"LIMIT  1"
 
@@ -482,14 +484,15 @@ func (job *MyJob) J_MonthlyRankCalc() {
 	defer session.Close()
 
 	//持仓中最大收益率股票
-	earningSql := "SELECT  ors.user_id, ors.stock_code,s.stock_name, (cs.current_price-ors.trans_price ) / ors.trans_price earning_rate" +
+	earningSql := "SELECT  ors.user_id, ors.stock_code,u.nick_name,s.stock_name, (cs.current_price-ors.trans_price ) / ors.trans_price earning_rate" +
 		" ,date_format(curdate(),'%Y-%m') month " +
 		"FROM  (SELECT user_id, stock_code, sum(stock_number) stock_number, trans_price  FROM stock_holding " +
 		"WHERE holding_status = 1 AND user_id = ? GROUP BY user_id, stock_code, trans_price  ) ors " +
-		"LEFT JOIN  current_stock_detail cs  ON ors.stock_code = cs.stock_code" +
-		"LEFT JOIN  stock s  ON ors.stock_code = s.stock_code" +
-		"GROUP BY  ors.user_id,ors.stock_code" +
-		"ORDER BY  earning_rate DESC" +
+		"LEFT JOIN  current_stock_detail cs  ON ors.stock_code = cs.stock_code " +
+		"LEFT JOIN  stock s  ON ors.stock_code = s.stock_code " +
+		"LEFT JOIN  user u ON u.id  = ors.user_id " +
+		"GROUP BY  ors.user_id,ors.stock_code " +
+		"ORDER BY  earning_rate DESC " +
 		"LIMIT  1"
 
 	err := session.Desc("earning", "earning_rate").Limit(model.RANK_SIZE, 0).Find(&userAccounts)

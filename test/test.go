@@ -45,3 +45,7 @@ func getData(ch chan string) {
 		fmt.Printf("%s ", input)
 	}
 }
+
+func Add(a, b int) int {
+	return a + b
+}

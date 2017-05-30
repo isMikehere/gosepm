@@ -70,6 +70,7 @@ type UserAccount struct {
 	TransFrequency  float64   `xorm:"decimal(16,2)"` //交易频率,
 	SuccessRate     float64   `xorm:"decimal(16,2)"` //成功率,
 	TransStart      time.Time //首次交易时间
+	TotalFollow     int       `xorm:"int(10) "`    //订阅量
 	UserLevel       int8      `xorm:"varchar(20)"` // 用户级别;1:小白；2：熟客；3：高手；4：骨灰
 	Created         time.Time `xorm:"created"`
 	Updated         time.Time `xorm:"updated"`

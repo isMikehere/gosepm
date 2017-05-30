@@ -8,6 +8,7 @@ import "time"
 type MonthRank struct {
 	Id          int64
 	UserId      int64
+	NickName    string  `xorm:"varchar(32) not null"`
 	EarningRate float64 `xorm:"decimal(12,2) not null"`
 	Month       string  `xorm:"char(7) not null"`
 	Position    int16
@@ -28,6 +29,7 @@ type MonthRank struct {
 type WeekRank struct {
 	Id          int64
 	UserId      int64
+	NickName    string    `xorm:"varchar(32) not null"`
 	EarningRate float64   `xorm:"decimal(12,2) not null"`
 	Month       string    `xorm:"char(7) not null"` //2017-01
 	Week        string    `xorm:"char(6)"`          //201721
@@ -47,6 +49,7 @@ type WeekRank struct {
 type DayRank struct {
 	Id          int64
 	UserId      int64
+	NickName    string    `xorm:"varchar(32) not null"`
 	EarningRate float64   `xorm:"decimal(12,2) not null"`
 	Day         string    `xorm:"char(10) not null"` //yyyy-mm-dd
 	StockCode   string    `xorm:"varchar(10) not null"`
@@ -55,4 +58,18 @@ type DayRank struct {
 	Created     time.Time `xorm:"created"`
 	Updated     time.Time `xorm:"updated"`
 	Version     int       `xorm:"version"`
+}
+
+//模拟排行榜实体
+type RankData struct {
+	Rank        int
+	UserId      int64
+	NickName    string  //昵称
+	EarningRate float64 //总收益率
+	DayRate     float64 //日收益率
+	WeekRate    float64 //周收益率
+	MonthRate   float64 //月收益率
+	WeekXTimes  int     //周冠军次数
+	Xstock      string  //最大收益个股
+	TotalFollow int
 }

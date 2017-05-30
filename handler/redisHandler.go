@@ -12,13 +12,13 @@ import (
 func NewRedisClient() *redis.Client {
 
 	redisCli := redis.NewClient(&redis.Options{
-		Addr:         "localhost:6379",
+		Addr:         model.RedisHost,
 		DialTimeout:  10 * time.Second,
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 30 * time.Second,
 		PoolSize:     10,
 		PoolTimeout:  30 * time.Second,
-		Password:     "xceof",
+		Password:     model.RedisPass,
 	})
 	return redisCli
 }

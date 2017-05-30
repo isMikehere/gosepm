@@ -74,10 +74,14 @@ func FollowStep2Handler(sess session.Store, ctx *macaron.Context, x *xorm.Engine
 **/
 func NotifyAllAfterPay(x *xorm.Engine, log *log.Logger, orderId int64) {
 
+	//订单
+	s := x.NewSession()
+	s.Begin()
+	defer s.Close()
+
 	order := new(model.StockOrder)
 
 	if has, _ := x.Id(orderId).Get(order); has {
-
 		user := new(model.User)         //订阅人
 		followedUser := new(model.User) //被订阅人
 		_, e1 := x.Id(order.UserId).Get(user)
@@ -92,18 +96,37 @@ func NotifyAllAfterPay(x *xorm.Engine, log *log.Logger, orderId int64) {
 		uf.FollowEnd = time.Now().AddDate(0, 0, 7) //订阅结束
 
 		_, err := x.Insert(uf)
-		Chk(err)
+		if err != nil {
+			s.Rollback()
+			return
+		}
+		//更新用户的订阅量
+		userAccount := new(model.UserAccount)
+		if has, err = x.Where("user_id=?", followedUser.Id).Get(&userAccount); err != nil {
+			s.Rollback()
+			return
+		} else {
+			if has {
+				userAccount.TotalFollow++
+				_, err = x.Where("user_id=?", followedUser.Id).Update(userAccount)
+				if err != nil {
+					s.Rollback()
+					return
+				}
+			}
+		}
 
 		var weeks = 1
 		if order.ProductType == 1 {
 			weeks = 4
 		}
+
 		// "尊敬的客户%s：您好，您已经成功订阅高手%s的为期%d的股票提醒，有效期为%s-%s,如有问题，请联系我们电话：%s"
 		content := fmt.Sprintf(model.FOLLOW_OK_MSG, user.UserName, followedUser.UserName, weeks, uf.FollowStart.Format(model.DATE_TIME_FORMAT), uf.FollowEnd.Format(model.DATE_TIME_FORMAT), model.HOT_LINE)
 		SendMessage(x, log, user.Mobile, content)
 		// 尊敬的客户%s：您好，%s已经成功订阅您的为期%d周股票提醒，有效期为%s-%s,如有问题，请联系我们电话：%s
 		SendMessage(x, log, followedUser.Mobile, fmt.Sprintf(model.TOBEFOLLOWED_OK_MSG, followedUser.UserName, user.UserName, weeks, uf.FollowStart.Format(model.DATE_TIME_FORMAT), uf.FollowEnd.Format(model.DATE_TIME_FORMAT), model.HOT_LINE))
-
+		s.Commit()
 	}
 
 }

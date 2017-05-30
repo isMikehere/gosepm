@@ -5,13 +5,15 @@ import "time"
 const (
 	DriverOfMysql     = "mysql"
 	DataSourceOfMysql = "root:zhsepm!@#$%@tcp(106.14.112.157:3306)/sepm?parseTime=true"
+	RedisHost         = "106.14.112.157:6379"
+	RedisPass         = "xceof"
 )
 
 const (
-	FOLLOW_OK_MSG       = "尊敬的客户%s：您好，您已经成功订阅高手%s的为期%d的股票提醒，有效期为%s-%s,如有问题，请联系我们电话：%s" //订阅成功通知订阅人
-	TOBEFOLLOWED_OK_MSG = "尊敬的客户%s：您好，%s已经成功订阅您的为期%d周股票提醒，有效期为%s-%s,如有问题，请联系我们电话：%s"   //订阅成功通知被订阅人
-	TRX_NOTIFY_MSG      = "尊敬的客户%s：您好，您订阅的用户%s于%s %s了股票%s %d 手 ,如有问题，请联系我们电话：%s"       //订阅成功通知被订阅人
-
+	REGISTER_MSG        = "【金修网络】验证码：%s 您正在注册金修网络个人账号，请勿泄露校验码给任何人，以免造成账户或资金损失，5分钟后失效。"       //注册
+	FOLLOW_OK_MSG       = "【金修网络】恭喜您订阅成功，订单有效期为%d周。请保持手机畅通并及时查看你的订阅信息，详情请参考订阅须知。祝您投资顺利！"     //订阅成功通知订阅人
+	TOBEFOLLOWED_OK_MSG = "【金修网络】恭喜您%s：%s已经成功订阅您的为期%d周股票模拟交易提醒，有效期为%s-%s。请及时处理详情请参考订单须知。"    //订阅成功通知被订阅人
+	TRX_NOTIFY_MSG      = "【金修网络】尊敬的用户:您在模拟股票交易中订阅的用户%s在%s买入%s，成交价格%s %s股。以上数据来自于模拟股票交易仅供参考" //交易提醒
 )
 const (
 	HOT_LINE         = "020-000000000"
@@ -76,6 +78,7 @@ const (
 
 const (
 	RANK_SIZE int = 20
+	PAGE_SIZE int = 10
 )
 
 const ONE_SECOND = 1*time.Second + 10*time.Millisecond

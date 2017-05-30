@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"./db"
-
 	"./handler"
 	"./model"
 	"github.com/go-macaron/binding"
@@ -69,13 +68,83 @@ func DbSync() {
 	// TestQuery()
 }
 
+func initXormEngin() {
+	// //映射数据库服务
+	eg, err := db.ConnectDb(model.DriverOfMysql, model.DataSourceOfMysql)
+	if err != nil {
+		fmt.Println("connection db err,%s", err)
+		panic(err)
+	} else {
+		engine = eg
+		log.Println("db-client init ok")
+	}
+	m.Map(engine)
+}
+
+/*
+**/
+func initRedisClient() {
+
+	//映射redis
+	fmt.Println("new redis-client... ")
+	redisCli = handler.NewRedisClient()
+	// redisCli.Set("name", "mike1", 0)
+	m.Map(redisCli)
+	fmt.Printf("redis-client init ok%s", (redisCli == nil))
+}
+
+func initLogger() {
+	//映射logger
+	var buf bytes.Buffer
+	myLogger = log.New(&buf, "logger: ", log.Lshortfile)
+	// m.Map(myLogger)
+	log.Println("-----------mike......")
+}
+
+/**
+初始化服务
+**/
+func initCache() {
+
+	//初始化用户
+	log.Println("------缓存用户---------")
+	users := make([]*model.User, 0)
+	err := engine.Where("1=1").Find(&users)
+	if err != nil {
+		log.Fatalf("%s", err.Error())
+		panic(0)
+	} else {
+		if len(users) > 0 {
+			for _, u := range users {
+				handler.SetRedisUser(redisCli, u)
+			}
+		}
+
+	}
+	log.Print("------缓存用户结束---------")
+	log.Print("------缓存股票---------")
+	//初始化股票
+	stocks := make([]*model.Stock, 0)
+	err = engine.Where("1=1").Find(&stocks)
+	if err != nil {
+		panic(0)
+	} else {
+		if len(stocks) > 0 {
+			for _, s := range stocks {
+				handler.SetRedisStock(redisCli, s)
+			}
+		}
+	}
+	log.Print("------缓存股票结束---------")
+}
+
 /**
 启动server
 **/
 func webgo() {
 	//2、启动模板引擎
 
-	m.Use(macaron.Renderer())
+	// m.Use(macaron.Renderer())
 	// m.Use(pongo2.Pongoer())
 	//session存储内存
 
@@ -90,7 +159,6 @@ func webgo() {
 	//验证码验证
 	m.Use(cache.Cacher())
 	m.Use(captcha.Captchaer())
-
 	//模版引擎配置
 	m.Use(macaron.Renderer(macaron.RenderOptions{
 		// 模板文件目录，默认为 "templates"
@@ -104,6 +172,10 @@ func webgo() {
 			},
 			"AppVer": func() string {
 				return "1.0.0"
+			},
+			"Plus": func(i int) int {
+				i++
+				return i
 			},
 		}},
 		// 模板语法分隔符，默认为 ["{{", "}}"]
@@ -155,7 +227,7 @@ func webgo() {
 	m.Get("/logout.htm", handler.LogoutHandler)
 	m.Get("/register.htm", handler.RegisterGetHandler)
 	m.Post("/register.htm", binding.Bind(model.User{}), handler.RegisterPostHandler)
-	m.Get("/index.htm", indexHandler)
+	m.Get("/index.htm", handler.IndexHandler)
 
 	//用户
 	m.Group("/user", func() {
@@ -192,98 +264,14 @@ func webgo() {
 	// })
 
 	//----------------------对外接口----------------------------------------------/
+	m.Get("/rank/:page", handler.RankListHandler)
 
+	m.Get("/test.htm", func(ctx *macaron.Context, x *xorm.Engine, r *redis.Client) {
+		ctx.Data["i"] = 0
+		ctx.HTML(200, "test")
+	})
 	/*------------------------routes-------------------------------------------*/
 	m.Run()
-}
-
-/**
-首页请求
-**/
-func indexHandler(ctx *macaron.Context, engine *xorm.Engine, redisCli *redis.Client) {
-
-	//日排名
-	dailyRanks := make([]*model.DayRank, 0)
-	engine.Where("1==1").Find(&dailyRanks)
-
-	//周排名
-	weekRanks := make([]*model.WeekRank, 0)
-	if engine.Where("1==1").Find(&weekRanks); len(weekRanks) > 0 {
-
-	}
-
-	//月排名
-	// monthRanks := make([]*model.MonthRank, 0)
-
-}
-
-func initXormEngin() {
-	// //映射数据库服务
-	eg, err := db.ConnectDb(model.DriverOfMysql, model.DataSourceOfMysql)
-	if err != nil {
-		fmt.Println("connection db err,%s", err)
-		panic(err)
-	} else {
-		engine = eg
-		log.Println("db-client init ok")
-	}
-	m.Map(engine)
-}
-
-/*
-**/
-func initRedisClient() {
-
-	//映射redis
-	fmt.Println("new redis-client... ")
-	redisCli = handler.NewRedisClient()
-	m.Map(redisCli)
-	fmt.Println("redis-client init ok")
-}
-
-func initLogger() {
-	//映射logger
-	var buf bytes.Buffer
-	myLogger = log.New(&buf, "logger: ", log.Lshortfile)
-	// m.Map(myLogger)
-	log.Println("-----------mike......")
-}
-
-/**
-初始化服务
-**/
-func initCache() {
-
-	//初始化用户
-	log.Println("------缓存用户---------")
-	users := make([]*model.User, 0)
-	err := engine.Where("1=1").Find(&users)
-	if err != nil {
-		log.Fatalf("%s", err.Error())
-		panic(0)
-	} else {
-		if len(users) > 0 {
-			for _, u := range users {
-				handler.SetRedisUser(redisCli, u)
-			}
-		}
-
-	}
-	log.Print("------缓存用户结束---------")
-	log.Print("------缓存股票---------")
-	//初始化股票
-	stocks := make([]*model.Stock, 0)
-	err = engine.Where("1=1").Find(&stocks)
-	if err != nil {
-		panic(0)
-	} else {
-		if len(stocks) > 0 {
-			for _, s := range stocks {
-				handler.SetRedisStock(redisCli, s)
-			}
-		}
-	}
-	log.Print("------缓存股票结束---------")
 }
 
 func main() {
@@ -292,7 +280,7 @@ func main() {
 	initLogger()
 	initXormEngin()
 	//数据库同步
-	SyncTable(new(model.UserFollow))
+	// SyncTable(new(model.UserAccount))
 	initRedisClient()
 	// initCache()
 	webgo()
