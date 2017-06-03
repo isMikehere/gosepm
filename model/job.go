@@ -12,6 +12,7 @@ type Task struct {
 	LastRuntime   time.Time //上次运行时间
 	LastRunResult int8      `xorm:"int(4)"`   //0:成功，1:失败
 	LastRunMsg    string    `xorm:"longtext"` //执行结果
+	DumpType      int8      `xorm:"int(4)"`   //0:db,1:redis,2:all
 	Created       time.Time `xorm:"created"`
 	Updated       time.Time `xorm:"updated"`
 	Version       int       `xorm:"version"`

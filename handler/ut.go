@@ -6,9 +6,15 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"reflect"
+
 	"strconv"
 	"strings"
+	"time"
+
+	"github.com/axgle/mahonia"
+	redis "github.com/go-redis/redis"
 
 	"github.com/go-macaron/session"
 	"github.com/shopspring/decimal"
@@ -23,6 +29,14 @@ func Chk(err error) {
 	}
 }
 
+/*
+ 格式化比例
+*/
+
+func FormateRate(rate float64) string {
+	return fmt.Sprintf("%s%s", decimal.NewFromFloat(rate).Mul(decimal.New(100, 0)), "%")
+}
+
 /**
 16进制转
 **/
@@ -35,8 +49,8 @@ session 中获取用户信息
 **/
 func GetSessionUser(sess session.Store) (bool, *model.User) {
 	if sess.Get("user") != nil {
-		user := sess.Get("user").(model.User)
-		return true, &user
+		user := sess.Get("user").(*model.User)
+		return true, user
 	} else {
 		return false, nil
 	}
@@ -65,20 +79,35 @@ func GetStock5Stages(stockList string) (bool, map[string][]string) {
 	if len(stockList) == 0 {
 		return false, nil
 	}
-	resp, _ := http.Get(model.STOCK_5_STAGES_API + "list=" + stockList)
+
+	path := model.STOCK_5_STAGES_API + "list=" + stockList
+	client := &http.Client{}
+	reqest, _ := http.NewRequest("GET", path, nil)
+
+	// reqest.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
+	reqest.Header.Set("Accept-Charset", "utf-8;q=0.7,*;q=0.3")
+	// reqest.Header.Set("Accept-Language", "zh-CN,zh;q=0.8,en;q=0.6")
+	reqest.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36")
+
+	// resp, _ := http.Get(path)
+	resp, _ := client.Do(reqest)
 	//一定要关闭
 	defer resp.Body.Close()
+
 	body, _ := ioutil.ReadAll(resp.Body)
 
-	if resp.Status == "200" { //相应成功
+	if resp.StatusCode == 200 { //相应成功
+
 		bodyStr := string(body)
+
 		// 定义切片
-		var stockCodes = make([]string, 0)
+		var stockCodes []string
 		var result = make(map[string][]string, 0)
 
 		if strings.Index(stockList, ",") > 0 { //多个股票
 			stockCodes = strings.Split(stockList, ",")
 		} else {
+			stockCodes = make([]string, 1)
 			stockCodes[0] = stockList
 		}
 		x := strings.Split(strings.Trim(bodyStr, "\n"), "\n")
@@ -94,34 +123,39 @@ func GetStock5Stages(stockList string) (bool, map[string][]string) {
 	}
 }
 
-func GetStock5StagesWithChan(ch chan map[string]string, stockList string) {
+/*
+协程获取5档数据
+**/
+func GetStock5StagesWithChan(ch chan map[string]interface{}, stockList string) {
 
 	if len(stockList) == 0 {
 		return
 	}
-
 	resp, _ := http.Get(model.STOCK_5_STAGES_API + "list=" + stockList)
 
 	//一定要关闭
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
-
-	if resp.Status == "200" { //相应成功
+	if resp.StatusCode == 200 { //相应成功
 		bodyStr := string(body)
 		// 定义切片
-		var stockCodes = make([]string, 0)
-		var result = make(map[string]string, 0)
-
+		var stockCodes []string
+		var result = make(map[string]interface{}, 0)
 		if strings.Index(stockList, ",") > 0 { //多个股票
 			stockCodes = strings.Split(stockList, ",")
 		} else {
+			stockCodes = make([]string, 1)
 			stockCodes[0] = stockList
 		}
-		x := strings.Split(strings.Trim(bodyStr, "\n"), "\n")
 
+		x := strings.Split(strings.Trim(bodyStr, "\n"), "\n")
 		for i, s := range x {
-			stockCode := strings.Trim(strings.Trim(stockCodes[i], model.EXC_SH), model.EXC_SZ)
-			result[stockCode] = s
+			if !strings.Contains(s, ",") {
+				continue
+			} else {
+				stockCode := strings.Trim(strings.Trim(stockCodes[i], model.EXC_SH), model.EXC_SZ)
+				result[stockCode] = s
+			}
 		}
 		ch <- result
 	}
@@ -157,7 +191,7 @@ percent=0.1  -->up
 percent=-0.1 -->down
 **/
 func GetLimitPrice(closePrice float64, percent float64, operator int) decimal.Decimal {
-	return decimal.NewFromFloat(closePrice).Mul((decimal.NewFromFloat(percent).Mul(decimal.New(int64(operator), 1))).Add(decimal.New(int64(1), 64))).Round(2)
+	return decimal.NewFromFloat(closePrice).Mul((decimal.NewFromFloat(percent).Mul(decimal.New(int64(operator), 0))).Add(decimal.New(int64(1), 0))).Round(2)
 }
 
 /**
@@ -179,13 +213,13 @@ func ConcatStockList(stockList interface{}) string {
 		{
 			len := len(t)
 			if len == 1 {
-				buffer.WriteString(AddExcToStockCode(t[0].StockCode))
+				buffer.WriteString(t[0].StockCode)
 			} else {
 				for i, v := range t {
 					if i < len-1 {
-						buffer.WriteString(AddExcToStockCode(v.StockCode) + ",")
+						buffer.WriteString(v.StockCode + ",")
 					} else {
-						buffer.WriteString(AddExcToStockCode(v.StockCode))
+						buffer.WriteString(v.StockCode)
 					}
 				}
 			}
@@ -195,13 +229,13 @@ func ConcatStockList(stockList interface{}) string {
 		{
 			len := len(t)
 			if len == 1 {
-				buffer.WriteString(AddExcToStockCode(t[0].StockCode))
+				buffer.WriteString(t[0].StockCode)
 			} else {
 				for i, v := range t {
 					if i < len-1 {
-						buffer.WriteString(AddExcToStockCode(v.StockCode) + ",")
+						buffer.WriteString(v.StockCode + ",")
 					} else {
-						buffer.WriteString(AddExcToStockCode(v.StockCode))
+						buffer.WriteString(v.StockCode)
 					}
 				}
 			}
@@ -210,13 +244,28 @@ func ConcatStockList(stockList interface{}) string {
 		{
 			len := len(t)
 			if len == 1 {
-				buffer.WriteString(AddExcToStockCode(t[0].StockCode))
+				buffer.WriteString(t[0].StockCode)
 			} else {
 				for i, v := range t {
 					if i < len-1 {
-						buffer.WriteString(AddExcToStockCode(v.StockCode) + ",")
+						buffer.WriteString(v.StockCode + ",")
 					} else {
-						buffer.WriteString(AddExcToStockCode(v.StockCode))
+						buffer.WriteString(v.StockCode)
+					}
+				}
+			}
+		}
+	case []string:
+		{
+			len := len(t)
+			if len == 1 {
+				buffer.WriteString(t[0])
+			} else {
+				for i, v := range t {
+					if i < len-1 {
+						buffer.WriteString(v + ",")
+					} else {
+						buffer.WriteString(v)
 					}
 				}
 			}
@@ -239,4 +288,113 @@ func InvokeObjectMethod(object interface{}, methodName string, args ...interface
 		inputs[i] = reflect.ValueOf(args[i])
 	}
 	reflect.ValueOf(object).MethodByName(methodName).Call(inputs)
+}
+
+/**
+通过redis 实现同获取订单号自增
+**/
+func OrderSnGenerator(redisCli *redis.Client) string {
+
+	var lock = "order_sn_lock"
+	t := time.Now().Format(model.DATE_ORDER_FORMAT)
+	for {
+		if f, _ := redisCli.SetNX(lock, "lock", 3*time.Second).Result(); f {
+			s, _ := redisCli.Get("order_sn").Result()
+			if s == "" {
+				s = "0001"
+				redisCli.Set("order_sn", s, 24*time.Hour)
+				redisCli.Del(lock)
+				return t + s
+			} else {
+				i, _ := strconv.Atoi(s)
+				i++
+				d := formateSn(strconv.Itoa(i))
+				fmt.Print("%s", d)
+				redisCli.Set("order_sn", d, 24*time.Hour)
+				redisCli.Del(lock)
+				return t + d
+			}
+		} else {
+			time.Sleep(500 * time.Millisecond)
+		}
+	}
+}
+
+func formateSn(i string) string {
+	len0 := (4 - len(i))
+	switch len0 {
+	case 0:
+		return i
+	case 1:
+		return "0" + i
+	case 2:
+		return "00" + i
+	case 3:
+		return "000" + i
+	default:
+		return i
+	}
+}
+
+/*
+获取用户昵称
+*/
+func GetUserNickName(x *xorm.Engine, r *redis.Client, id interface{}) string {
+
+	var i int64
+	switch id.(type) {
+	case int64:
+		i = id.(int64)
+	case int32:
+		i = int64(id.(int32))
+	case int:
+		i = int64(id.(int))
+	case string:
+		d, _ := strconv.Atoi(id.(string))
+		i = int64(d)
+	default:
+		i = 0
+	}
+	if u := GetUserById(x, r, i); u != nil {
+		return u.NickName
+	}
+	return ""
+}
+
+func FormatDate(d time.Time) string {
+	return d.Format(model.DATE_FORMAT)
+}
+func FormatDateTime(d time.Time) string {
+	return d.Format(model.DATE_TIME_FORMAT)
+}
+
+func ConvertToString(src string, srcCode string, tagCode string) string {
+
+	srcCoder := mahonia.NewDecoder(srcCode)
+	srcResult := srcCoder.ConvertString(src)
+	tagCoder := mahonia.NewDecoder(tagCode)
+	_, cdata, _ := tagCoder.Translate([]byte(srcResult), true)
+	result := string(cdata)
+	return result
+}
+
+func TestN() {
+	fmt.Print(strings.Count("ss,ss,ss", ","))
+}
+
+/**
+地址缩短工具
+**/
+func ShortMe(path string) (bool, string) {
+	x := url.URL{}
+	x.Host = model.ME_HOST
+	x.Scheme = model.ME_SCHEMA
+	x.Path = path
+	d := fmt.Sprintf(model.SHORT_API, x.EscapedPath())
+	_, shortPath := HttpGet(d)
+	if shortPath == "" {
+		return false, path
+	} else {
+		return true, shortPath
+	}
 }

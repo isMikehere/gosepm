@@ -27,6 +27,7 @@ func NewRedisClient() *redis.Client {
 根据用户ID获取用户
 **/
 func GetRedisStock(client *redis.Client, stockCode string) *model.Stock {
+
 	j, err := client.HGet(model.R_KEY_STOCKS, stockCode).Result()
 	if err != nil || j == "" {
 		return nil
@@ -43,13 +44,14 @@ func GetRedisStock(client *redis.Client, stockCode string) *model.Stock {
 func SetRedisStock(client *redis.Client, s *model.Stock) {
 	bs, _ := json.Marshal(s)
 	client.HSet(model.R_KEY_STOCKS, s.StockCode, string(bs))
+
 }
 
 /**
 根据用户ID获取用户
 **/
-func GetRedisUser(client *redis.Client, uid int64) *model.User {
-	j, err := client.HGet(model.R_KEY_USERS, strconv.Itoa(int(uid))).Result()
+func GetRedisUser(client *redis.Client, uid string) *model.User {
+	j, err := client.HGet(model.R_KEY_USERS, uid).Result()
 	if err != nil || j == "" {
 		return nil
 	} else {
@@ -65,4 +67,51 @@ func GetRedisUser(client *redis.Client, uid int64) *model.User {
 func SetRedisUser(client *redis.Client, u *model.User) {
 	bs, _ := json.Marshal(u)
 	client.HSet(model.R_KEY_USERS, strconv.Itoa(int(u.Id)), string(bs))
+}
+
+/**
+stockcodes
+**/
+func SetRedisStockCodes(client *redis.Client, codes []string) {
+	bs, _ := json.Marshal(codes)
+	client.Set(model.R_KEY_STOCK_CODES, string(bs), 0)
+}
+
+/**
+stockcodes
+**/
+func GetRedisStockCodes(client *redis.Client) []string {
+
+	j, err := client.Get(model.R_KEY_STOCK_CODES).Result()
+	if err != nil || j == "" {
+		return nil
+	} else {
+		codes := make([]string, 0)
+		json.Unmarshal([]byte(j), &codes)
+		return codes
+	}
+}
+
+/**
+stockcode detail
+**/
+func GetRedisStockDetail(client *redis.Client, stockCode string) string {
+
+	j, _ := client.HGet(model.R_KEY_STOCKS_DETAIL, stockCode).Result()
+	return j
+}
+
+/**
+最新消息列表
+**/
+func GetRedisLatestMsg(client *redis.Client, key string) string {
+	j, _ := client.Get(key).Result()
+	return j
+}
+
+/**
+设置消息
+***/
+func SetRedisLatestMsg(client *redis.Client, key, msg string) {
+	client.Set(key, msg, time.Hour*24*2)
 }

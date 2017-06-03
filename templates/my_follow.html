@@ -1,0 +1,28 @@
+
+{{template "header"}}
+{{template "nav"}}
+    <div id="body">
+            <table>
+                <thead>
+                    <tr>
+                        <td>被订阅人</td>
+                        <td>订阅类型</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range .myfollows}}
+                    <tr>
+                        <td> {{ GetUserNickName .x .r .id }}</td>
+                        <td> {{if eq .types 0}}  
+                                    一周  
+                                {{else}}  
+                                   一周
+                                {{end}}
+                        </td>
+                    </tr>
+                     {{end}}
+                    <tbody>
+
+            </table>
+    </div>
+ {{template "tail"}}

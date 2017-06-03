@@ -1,7 +1,46 @@
-{{template "header"}}
+{{template "header" .}}
+{{template "nav" .}}
     <div id="body">
+        <div class="step"></div>
+        <div class="products">
 
-        body
+            <table>
+                <thead>
+                    <tr>
+                        <td>昵称 <td>
+                        <td>订阅类型 <td>
+                        <td>金额<td>
+                        <td>操作<td>
+                    </tr>
+                </thead>
+                <tbody>
+
+     <tr>
+        <td>{{.user2Follow.NickName}} <td>
+        <td>
+            <select  id="productType" >
+                 <option value="-1">选择类型</option>
+                {{ range .products}}
+                <option value="{{.Types}}">{{.Name}}</option>
+                {{end}}
+            </select> 
+            <td>
+        <td>
+             <span id="price"></span>
+         <td>
+        <td>
+            <input id="buy" type="button" value="确认下单">
+            
+            <td>
+                
+                </tr>
+            </tbody>
+            </table>
+        </div>
+    <div>
+     请仔细阅读订阅协议： <input type="checkbox" id="readContract" >
+
+    </div>
 
     </div>
  {{template "tail"}}

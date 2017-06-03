@@ -8,6 +8,7 @@ import (
 
 	"../model"
 	"github.com/go-macaron/session"
+	redis "github.com/go-redis/redis"
 	"github.com/go-xorm/xorm"
 	"github.com/shopspring/decimal"
 	macaron "gopkg.in/macaron.v1"
@@ -112,7 +113,7 @@ func canEntrust(x *xorm.Engine, ua *model.UserAccount, stockCode string, quantit
 	cp, _ := strconv.ParseFloat(v5[3], 2)  //当前价
 	yCp, _ := strconv.ParseFloat(v5[2], 2) //昨日收盘价
 	dm, _ := decimal.NewFromString(v5[8])
-	dealAmount := dm.Div(decimal.New(int64(100), 64))          //交易量(单位：手)
+	dealAmount := dm.Div(decimal.New(int64(100), 0))           //交易量(单位：手)
 	var rBp, rBq, upLimitPrice, downLimitPrice decimal.Decimal //实际交易价格,数量,涨停价，跌停价
 
 	var percent float64 = 0.1
@@ -153,7 +154,7 @@ func canEntrust(x *xorm.Engine, ua *model.UserAccount, stockCode string, quantit
 			}
 
 			//5、判断是否有足够资金购买
-			cost := rBq.Mul(rBp).Mul(decimal.New(100, 1)).Round(2)
+			cost := rBq.Mul(rBp).Mul(decimal.New(100, 0)).Round(2)
 			if decimal.NewFromFloat(ua.AvailableAmount).Cmp(cost) < 0 {
 				ret["msg"] = model.TRX_SHORT_OF_MONEY
 				return 2, ret
@@ -205,7 +206,7 @@ func canEntrust(x *xorm.Engine, ua *model.UserAccount, stockCode string, quantit
 				for _, sh := range stockHoldings {
 					availableNumber += sh.AvailableNumber
 				}
-				if decimal.New(int64(availableNumber), 64).Cmp(rBq) < 0 { //可售数量小于持仓数量
+				if decimal.New(int64(availableNumber), 0).Cmp(rBq) < 0 { //可售数量小于持仓数量
 					ret["msg"] = model.TRX_STOCK_ENT_MORE
 					return 2, ret
 				} else {
@@ -308,7 +309,7 @@ func canTrx(ent *model.StockEntrust, log *log.Logger, v5 []string) bool {
 		}
 		//1、数量第二步判断
 		dm, _ := decimal.NewFromString(v5[8])
-		dealAmount := dm.Div(decimal.New(int64(100), 64)) //交易量(单位：手)
+		dealAmount := dm.Div(decimal.New(int64(100), 0)) //交易量(单位：手)
 		if dealAmount.Cmp(decimal.Zero) <= 0 {
 			return false
 		}
@@ -323,7 +324,7 @@ func canTrx(ent *model.StockEntrust, log *log.Logger, v5 []string) bool {
 		}
 		//1、数量第二步判断
 		dm, _ := decimal.NewFromString(v5[8])
-		dealAmount := dm.Div(decimal.New(int64(100), 64)) //交易量(单位：手)
+		dealAmount := dm.Div(decimal.New(int64(100), 0)) //交易量(单位：手)
 		if dealAmount.Cmp(decimal.Zero) <= 0 {
 			return false
 		}
@@ -350,11 +351,58 @@ func doTrx(s *xorm.Session, log *log.Logger, ent *model.StockEntrust, v5 []strin
 	}
 	var trx *model.StockTrans
 	var stockHolding *model.StockHolding
-	if ent.EntrustStatus == 0 { //已经交易
+
+	//已经交易
+	if ent.EntrustStatus == 0 {
 		return
 	}
 
+	//查找持仓记录
+	if has, _ := s.Where("user_id=?", ent.UserId).
+		And("stock_code=?", ent.StockCode).
+		And("holding_status=?", 1).Get(stockHolding); has {
+		//存在纪录
+		if ent.EntrustStatus == 0 { //继续委托
+			stockHolding.HoldingStatus = 1
+		} else {
+			stockHolding.HoldingStatus = 0
+		}
+
+		stockHolding.StockNumber -= ent.RentrustNumber
+
+		if stockHolding.StockNumber < 0 {
+			stockHolding.StockNumber = 0 //全部买出
+			stockHolding.HoldingStatus = 0
+		}
+
+	} else {
+		return
+	}
+
+	//*********************增加交易流水************************
+	trx = new(model.StockTrans)
+	trx.StockCode = ent.StockCode
+	trx.TransType = ent.TransType
+	trx.TransStatus = 1
+	trx.TransFrom = 0
+	trx.TransNumber = ent.RentrustNumber
+	trx.TransPrice = ent.RentrustPrice
+	trx.TransTime = now
+
+	//判断是否有订阅者是否需要通知
+	if has := hasFollowers(s, log, userAccount.UserId); has {
+		trx.NotifyStatus = 1
+	} else {
+		trx.NotifyStatus = 0
+	}
+
+	if _, err := s.Insert(trx); err != nil {
+		log.Printf("插入交易失败,回滚,%s", trx)
+		s.Rollback()
+	}
+	//*********************增加交易流水结束************************
 	if ent.TransType == 0 { //sale
+
 		//可以卖出的条件是 当前价格>=委托价格,并按照委托价格
 		cp, _ := decimal.NewFromString(v5[3])
 		entP := decimal.NewFromFloat(ent.EntrustPrice)
@@ -368,15 +416,20 @@ func doTrx(s *xorm.Session, log *log.Logger, ent *model.StockEntrust, v5 []strin
 		ent.RentrustPrice = ssp
 
 		//1、数量第二步判断
-		dm, _ := decimal.NewFromString(v5[8])             //成交量
-		dealAmount := dm.Div(decimal.New(int64(100), 64)) //交易量(单位：手)
-		entq := decimal.New(int64(ent.EntrustNumber), 64) //委托量
+		dm, _ := decimal.NewFromString(v5[8])            //成交量
+		dealAmount := dm.Div(decimal.New(int64(100), 0)) //交易量(单位：手)
+		entq := decimal.New(int64(ent.EntrustNumber), 0) //委托量
 
 		if dealAmount.Cmp(entq) >= 0 {
+
 			ent.EntrustStatus = 0                     //全量交易
 			q, _ := strconv.Atoi(entq.StringFixed(0)) //实际交易量
 			ent.RentrustNumber = int32(q)
 			sq = entq
+
+			//当全量卖出 交易才算完全结束则进行统计，本次交易是否亏损
+			// stockHolding.TransPrice
+
 		} else { //剩余量继续委托
 			ent.EntrustStatus = 0                                     //部分交易，继续委托
 			q, _ := strconv.Atoi(entq.Sub(dealAmount).StringFixed(0)) //剩余量
@@ -385,35 +438,63 @@ func doTrx(s *xorm.Session, log *log.Logger, ent *model.StockEntrust, v5 []strin
 			ent.RentrustNumber = int32(qq)
 			sq = dealAmount
 		}
+
 		//结算资金
-		saleMoney := sq.Mul(sp).Mul(decimal.New(100, 64))
+		saleMoney := sq.Mul(sp).Mul(decimal.New(100, 0))
 		sm, _ := saleMoney.Float64() //进入可用资金中
 		userAccount.AvailableAmount += sm
 
-		//查找持仓记录
-		if has, _ := s.Where("user_id=?", ent.UserId).
-			And("stock_code=?", ent.StockCode).
-			And("holding_status=?", 1).Get(stockHolding); !has {
-			return
-		} else { //存在纪录
-
-			if ent.EntrustStatus == 0 { //继续委托
-				stockHolding.HoldingStatus = 1
-			} else {
-				stockHolding.HoldingStatus = 0
-			}
-			stockHolding.StockNumber -= ent.RentrustNumber
-			if stockHolding.StockNumber < 0 {
-				stockHolding.StockNumber = 0
-				stockHolding.HoldingStatus = 0
-			}
-		}
 		_, err := s.Update(stockHolding)
+
 		if err != nil {
 			log.Printf("更新持仓表失败：%s", stockHolding.ToString())
 			s.Rollback()
 			return
 		}
+		//交易对处理
+		trxInfos := make([]*model.StockTrxInfo, 0)
+		s.Where("user_id = ?", ent.UserId).And("stock_code=?", ent.StockCode).
+			And("trans_status=?", 0).Desc("id").Find(&trxInfos)
+		//匹配交易对
+
+		func() {
+
+			num := decimal.Zero
+			for _, trxInfo := range trxInfos {
+				n := decimal.New(int64(trxInfo.LeftNumber), 0)
+				num = num.Add(n)
+
+				if num.Cmp(dealAmount) < 0 {
+					trxInfo.TransStatus = 1 //交易结束
+					trxInfo.SaleTime = now
+					earings := sp.Sub(decimal.NewFromFloat(trxInfo.BuyPrice)).Mul(decimal.New(int64(100), 0)).Mul(n)
+					trxInfo.Earning, _ = decimal.NewFromFloat(trxInfo.Earning).Add(earings).Float64()
+					trxInfo.NotifyStatus = 2 //卖出待提醒
+					trxInfo.LastTrxId = trx.Id
+					s.Id(trxInfo.Id).Update(trxInfo)
+				} else {
+					if left := num.Sub(dealAmount); left.Cmp(decimal.Zero) > 0 {
+						trxInfo.LeftNumber = int32(left.IntPart())
+						trxInfo.SaleTime = now
+						earings := sp.Sub(decimal.NewFromFloat(trxInfo.BuyPrice)).
+							Mul(decimal.New(int64(100), 0)).
+							Mul(decimal.New(int64(trxInfo.TransNumber-trxInfo.LeftNumber), 0))
+						trxInfo.Earning, _ = decimal.NewFromFloat(trxInfo.Earning).Add(earings).Float64()
+						trxInfo.NotifyStatus = 2 //卖出待提醒
+						trxInfo.LastTrxId = trx.Id
+					} else {
+						trxInfo.TransStatus = 1 //交易结束
+						trxInfo.SaleTime = now
+						earings := sp.Sub(decimal.NewFromFloat(trxInfo.BuyPrice)).Mul(decimal.New(int64(100), 0)).Mul(n)
+						trxInfo.Earning, _ = decimal.NewFromFloat(trxInfo.Earning).Add(earings).Float64()
+						trxInfo.NotifyStatus = 2 //卖出待提醒
+						trxInfo.LastTrxId = trx.Id
+					}
+					s.Id(trxInfo.Id).Update(trxInfo)
+					break
+				}
+			}
+		}()
 
 	} else { //buy
 
@@ -428,9 +509,9 @@ func doTrx(s *xorm.Session, log *log.Logger, ent *model.StockEntrust, v5 []strin
 		ent.RentrustPrice = ssp
 
 		//1、数量第二步判断
-		dm, _ := decimal.NewFromString(v5[8])             //成交量
-		dealAmount := dm.Div(decimal.New(int64(100), 64)) //交易量(单位：手)
-		entq := decimal.New(int64(ent.EntrustNumber), 64) //委托量
+		dm, _ := decimal.NewFromString(v5[8])            //成交量
+		dealAmount := dm.Div(decimal.New(int64(100), 0)) //交易量(单位：手)
+		entq := decimal.New(int64(ent.EntrustNumber), 0) //委托量
 
 		if dealAmount.Cmp(entq) >= 0 {
 			ent.EntrustStatus = 0                     //全量交易
@@ -443,8 +524,9 @@ func doTrx(s *xorm.Session, log *log.Logger, ent *model.StockEntrust, v5 []strin
 			qq, _ := strconv.Atoi(dealAmount.StringFixed(0)) //实际交易量
 			ent.RentrustNumber = int32(qq)
 		}
+
 		//结算资金---->在委托的时候已经进行减去
-		// saleMoney := sq.Mul(sp).Mul(decimal.New(100, 64))
+		// saleMoney := sq.Mul(sp).Mul(decimal.New(100, 0))
 		// sm, _ := saleMoney.Float64() //进入可用资金中
 		// userAccount.AvailableAmount -= sm
 
@@ -457,39 +539,39 @@ func doTrx(s *xorm.Session, log *log.Logger, ent *model.StockEntrust, v5 []strin
 		stockHolding.TransPrice = ent.RentrustPrice
 		stockHolding.TransTime = now
 
-		_, err := s.Insert(stockHolding)
-		if err != nil {
+		if _, err := s.Insert(stockHolding); err != nil {
 			log.Printf("插入持仓表失败：%s", stockHolding.ToString())
 			s.Rollback()
 			return
 		}
 
 	}
+
 	//判断首次交易时间
 	if userAccount.TransStart.IsZero() {
 		userAccount.TransStart = now
 	}
 
-	//增加交易实际记录
-	trx = new(model.StockTrans)
-	trx.StockCode = ent.StockCode
-	trx.TransType = ent.TransType
-	trx.TransStatus = 1
-	trx.TransFrom = 0
-	trx.TransNumber = ent.RentrustNumber
-	trx.TransPrice = ent.RentrustPrice
-	trx.TransTime = now
-	//判断是否有订阅者是否需要通知
-	if has := hasFollowers(s, log, userAccount.UserId); has {
-		trx.NotifyStatus = 1
-	} else {
-		trx.NotifyStatus = 0
+	//记录交易对
+	trxInfo := new(model.StockTrxInfo)
+	trxInfo.StockCode = ent.StockCode
+	trxInfo.UserId = ent.UserId
+	trxInfo.TransNumber = ent.RentrustNumber
+	trxInfo.LeftNumber = ent.RentrustNumber
+	trxInfo.BuyTime = now
+	trxInfo.BuyPrice = ent.EntrustPrice
+	trxInfo.TransStatus = 0  //买入中
+	trxInfo.NotifyStatus = 0 //买入待提醒
+	trxInfo.LastTrxId = trx.Id
+
+	if _, err := s.Insert(trxInfo); err != nil {
+		log.Printf("插入交易对失败：%s", err.Error())
+		s.Rollback()
+		return
 	}
 
 	//更新数据库
-	_, err := s.Update(ent, userAccount)
-	if err == nil {
-		_, err = s.Insert(trx)
+	if _, err := s.Update(ent, userAccount); err == nil {
 		if err == nil {
 			s.Commit()
 		} else {
@@ -500,6 +582,7 @@ func doTrx(s *xorm.Session, log *log.Logger, ent *model.StockEntrust, v5 []strin
 		log.Printf("更新失败，回滚%s", trx)
 		s.Rollback()
 	}
+
 	log.Printf("处理委托交易结束:%d,开启事务处理...\n", ent.Id)
 }
 
@@ -537,7 +620,7 @@ func doEntrust(x *xorm.Engine, userId int64, stockCode string, quantity decimal.
 
 	//修改资金账户信息
 	if trxType == 1 {
-		a, _ := (decimal.NewFromFloat(userAccount.AvailableAmount).Sub(quantity.Mul(buyPrice.Mul(decimal.New(100, 1))))).Float64()
+		a, _ := (decimal.NewFromFloat(userAccount.AvailableAmount).Sub(quantity.Mul(buyPrice.Mul(decimal.New(100, 0))))).Float64()
 		if a < 0 {
 			a = 0
 		}
@@ -619,7 +702,7 @@ func CancelEntrustHandler(sess session.Store, ctx *macaron.Context, x *xorm.Engi
 				//恢复可用金额
 				_, userAccount := QueryUserAccoutByUserIdWithSession(session, stockEntrust.UserId)
 				if stockEntrust.TransType == 1 { //买入委托取消后，将买入的金额恢复到可用金额
-					d, _ := (decimal.NewFromFloat(userAccount.AvailableAmount).Add(decimal.New(int64(stockEntrust.EntrustNumber), 1).Mul(decimal.New(100, 1)).Mul(decimal.NewFromFloat(stockEntrust.EntrustPrice)))).Float64()
+					d, _ := (decimal.NewFromFloat(userAccount.AvailableAmount).Add(decimal.New(int64(stockEntrust.EntrustNumber), 0).Mul(decimal.New(100, 0)).Mul(decimal.NewFromFloat(stockEntrust.EntrustPrice)))).Float64()
 					userAccount.AvailableAmount = d
 					_, err = session.Update(userAccount)
 					if err != nil {
@@ -650,7 +733,7 @@ func CancelEntrustHandler(sess session.Store, ctx *macaron.Context, x *xorm.Engi
 /**
 取消所有委托
 **/
-func CanCellAllEntrust(session *xorm.Session, log *log.Logger) {
+func CanCellAllEntrust(session *xorm.Session) {
 
 	session.Begin()
 	defer session.Close()
@@ -681,4 +764,19 @@ func CheckStockStopService(x *xorm.Engine, log *log.Logger, stockCode string) bo
 		return false
 	}
 	return false
+}
+
+func Stock5StageHander(sess session.Store, ctx *macaron.Context, redis *redis.Client) {
+
+	r := new(model.JsonResult)
+	stockCode := ctx.Params(":stockCode")
+
+	if stockDetail := GetRedisStockDetail(redis, stockCode); stockDetail != "" {
+		r.Code = "200"
+		r.Data = stockDetail
+	} else {
+		r.Code = "100"
+		r.Data = stockDetail
+	}
+	ctx.JSON(200, r)
 }

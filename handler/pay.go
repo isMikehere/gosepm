@@ -17,6 +17,8 @@ import (
 
 	"../model"
 
+	"strconv"
+
 	"github.com/go-xorm/xorm"
 	"github.com/stephenlyu/wxpay"
 	macaron "gopkg.in/macaron.v1"
@@ -205,7 +207,7 @@ func AlipayNotifyHandler(ctx *macaron.Context, x *xorm.Engine, log *log.Logger) 
 		log.Println("[alipay] sign verify success")
 		//判断订单是否已完成
 		if urls.Get("trade_status") == "TRADE_FINISHED" || urls.Get("trade_status") == "TRADE_SUCCESS" { //交易成功
-			err := UpdateOrderPayStatus(x, log, model.ORDER_STATUS_NOT_PAYED, orderNo, "alipay")
+			err := UpdateOrderPayStatus(x, model.ORDER_STATUS_NOT_PAYED, orderNo, "alipay")
 			if err != nil {
 				log.Print("error: update order status, order id: %s trade no: %s", orderNo, tradeNo)
 			}
@@ -224,7 +226,7 @@ func AlipayNotifyHandler(ctx *macaron.Context, x *xorm.Engine, log *log.Logger) 
 
 const WX_APP_KEY = "2ec3dfca00f46cce2c7e64e6cc71e70b"
 
-const SERVER_ADDR string = "localhost：8080"
+const SERVER_ADDR string = "localhost：4000"
 const SERVER_IP string = "10.0.0.1"
 
 func wxNewAppTrans() *wxpay.AppTrans {
@@ -340,7 +342,7 @@ func WxNotifyHandler(ctx *macaron.Context, x *xorm.Engine, log *log.Logger) (int
 
 	if notiData.ResultCode == "SUCCESS" { //交易成功
 		fmt.Printf("Update")
-		err := UpdateOrderPayStatus(x, log, model.ORDER_STATUS_NOT_PAYED, notiData.OutTradeNo, "weixin")
+		err := UpdateOrderPayStatus(x, model.ORDER_STATUS_NOT_PAYED, notiData.OutTradeNo, "weixin")
 		if err != nil {
 			log.Print("error: update order status, order id: %s trade no: %s", notiData.OutTradeNo, notiData.TransactionId)
 		}
@@ -350,4 +352,52 @@ func WxNotifyHandler(ctx *macaron.Context, x *xorm.Engine, log *log.Logger) (int
 	s, err := xml.Marshal(result)
 	Chk(err)
 	return 200, string(s)
+}
+
+//测试支付路由
+func TestPayHandler(ctx *macaron.Context, x *xorm.Engine) {
+
+	orderId, _ := strconv.Atoi(ctx.Params(":orderId"))
+	order := new(model.StockOrder)
+	msg := "恭喜你支付成功"
+	if has, _ := x.Id(orderId).Get(order); has {
+		//判断是否已经支付
+		if order.OrderStatus != 0 {
+			msg = "订单状态异常，请检查订单"
+		} else {
+
+			s := x.NewSession()
+			s.Begin()
+			defer s.Close()
+			order.OrderStatus = 1
+
+			now := time.Now()
+			uf := new(model.UserFollow)
+			uf.UserId = order.UserId
+			uf.FollowedId = order.FollowedId
+			uf.FollowType = order.ProductType
+			uf.FollowStart = now
+			uf.OrderId = order.Id
+			uf.FollowEnd = now.Add(7 * 24 * time.Hour)
+			uf.FollowStatus = 0
+			_, err := s.Id(orderId).Update(order)
+			if err != nil {
+				s.Rollback()
+				msg = "订单更新失败,请联系客服"
+			}
+			_, err = s.Insert(uf)
+			if err != nil {
+				s.Rollback()
+				msg = "订单更新失败,请联系客服"
+			} else {
+				s.Commit()
+				//成功后提醒
+				go NotifyAllAfterPay(x, order.Id)
+			}
+		}
+	} else {
+		msg = "订单不存在"
+	}
+	ctx.Data["msg"] = msg
+	ctx.HTML(200, "follow_step3")
 }

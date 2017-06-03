@@ -5,6 +5,16 @@
 
         </div>
 
+<div class="news">
+    <table>
+       {{range .news}}
+        <tr>
+<td>{{.Title}}</td>
+<td>{{.Content}}</td>
+        </tr>
+       {{end}}
+    </table>    
+</div>
         <!--排名 -->
     <div class="rankDiv">
           <table css="rankTable">
@@ -19,13 +29,41 @@
                     </tr>
                 </thead>  
                 <tbody>
-                  {{range .dailyRank }}
+                  {{range .dailyRanks }}
                     <tr>
-                        <td></td>   
+                        <td>{{.Rank}}</td>   
+                        <td>{{.NickName}}</td>   
+                        <td>{{.StockCode}}</td>   
+                        <td>{{.DayRate}}</td>   
+                        <td>{{.TotalFollow}}</td>   
+                        <td>订阅</td>   
 
                     </tr>
                     {{end}}  
-                
+                      {{range .weekRanks }}
+                    <tr>
+                     <td>{{.Rank}}</td>   
+                        <td>{{.NickName}}</td>   
+                        <td>{{.StockCode}}</td>   
+                        <td>{{.WeekRate}}</td>   
+                        <td>{{.TotalFollow}}</td>   
+                        <td>订阅</td>   
+
+
+                    </tr>
+                    {{end}}  
+                    {{range .monthRanks }}
+                    <tr>
+                       <td>{{.Rank}}</td>   
+                        <td>{{.NickName}}</td>   
+                        <td>{{.StockCode}}</td>   
+                        <td>{{.MonthRate}}</td>   
+                        <td>{{.TotalFollow}}</td>   
+                        <td>订阅</td>   
+ 
+
+                    </tr>
+                    {{end}} 
                 </tbody>    
           </table>
           

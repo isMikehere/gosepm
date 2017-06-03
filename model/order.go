@@ -18,21 +18,21 @@ const (
 订单表
 **/
 type StockOrder struct {
-	Id             int64
-	UserId         int64     //订阅人
-	FollowedUserId int64     //被订阅人
-	OrderSn        string    `xorm:"varchar(32) not null"`             //内部订单流水号
-	OutTradeNo     string    `xorm:"varchar(32) not null"`             //外部订单号 ,发送支付平台
-	OrderStatus    int       `xorm:"int(8) not null"`                  //0：已下单，待支付，1：已支付，2：退款中，3：已退款
-	OrderAmount    float64   `xorm:"decimal(16,2) default 0 not null"` //订单金额
-	BonusAmount    float64   `xorm:"decimal(16,2) default 0"`          //红包金额
-	PayAmount      float64   `xorm:"decimal(16,2) not null"`           //支付金额 == 订单金额-红包金额
-	PayType        string    `xorm:"varchar(20) not null"`             //alipay,weixin,
-	ProductType    int8      `xorm:"int(8)"`                           //0：周，1：月
-	PayTime        time.Time //支付时间
-	Created        time.Time `xorm:"created"`
-	Updated        time.Time `xorm:"updated"`
-	Version        int       `xorm:"version"`
+	Id          int64
+	UserId      int64     //订阅人
+	FollowedId  int64     //被订阅人
+	OrderSn     string    `xorm:"varchar(32) not null"`             //内部订单流水号
+	OutTradeNo  string    `xorm:"varchar(32) not null"`             //外部订单号 ,发送支付平台
+	OrderStatus int       `xorm:"int(8) not null"`                  //0：已下单，待支付，1：已支付，2：退款中，3：已退款
+	OrderAmount float64   `xorm:"decimal(16,2) default 0 not null"` //订单金额
+	BonusAmount float64   `xorm:"decimal(16,2) default 0"`          //红包金额
+	PayAmount   float64   `xorm:"decimal(16,2) not null"`           //支付金额 == 订单金额-红包金额
+	PayType     string    `xorm:"varchar(20) not null"`             //alipay,weixin,
+	ProductType int8      `xorm:"int(8)"`                           //0：周，1：月
+	PayTime     time.Time //支付时间
+	Created     time.Time `xorm:"created"`
+	Updated     time.Time `xorm:"updated"`
+	Version     int       `xorm:"version"`
 }
 
 /**
@@ -65,4 +65,12 @@ type RefundLog struct {
 	Created   time.Time `xorm:"created"`
 	Updated   time.Time `xorm:"updated"`
 	Version   int       `xorm:"version"`
+}
+
+/**
+页面订单实体
+**/
+type OrderFollow struct {
+	Uf    *UserFollow `xorm:"extends"`
+	Order *StockOrder `xorm:"extends"`
 }

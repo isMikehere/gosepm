@@ -1,0 +1,50 @@
+
+{{template "header"}}
+{{template "nav"}}
+    <div id="body">
+
+             <table>
+                <thead>
+                    <tr>
+                        <td>订阅号</td>
+                        <td>被订阅人</td>
+                        <td>订阅类型</td>
+                         <td>订阅周期</td>
+                        <td>金额</td>
+                         <td>状态</td>
+                    </tr>
+                </thead>
+                <tbody>
+                {{$x:=.x}}
+                {{$r:=.r}}
+                    {{range .orders}}
+                    <tr>
+                        <td>{{.Order.OrderSn}}</td>
+                        <td> {{ GetUserNickName $x $r 1 }}</td>
+                        <td> {{if eq .Order.ProductType 0}}  
+                                    一周  
+                                {{else}}  
+                                   一月
+                                {{end}}
+                        </td>
+                        <td>{{.Uf.FollowStart | FormatDateTime}}~{{.Uf.FollowEnd | FormatDateTime}}</td>
+                        <td>{{.Order.PayAmount}}</td>
+                        <td>
+                            <!--0:订阅中，1:待通知，2:订阅结束，3:已退订-->
+                            {{if eq .Uf.FollowStatus 0}}  
+                                    订阅中  
+                                {{else if eq .Uf.FollowStatus 1}}  
+                                待通知
+                                {{else if eq .Uf.FollowStatus 2}} 
+                                订阅结束 
+                                {{else}}
+                                 已经退订
+                                {{end}}
+                        </td>
+                    </tr>
+                     {{end}}
+                    <tbody>
+
+            </table>
+    </div>
+ {{template "tail"}}

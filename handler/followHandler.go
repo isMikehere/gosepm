@@ -3,13 +3,13 @@ package handler
 import (
 	"fmt"
 	"log"
+	"strconv"
 	"time"
 
 	"../model"
 
-	"strconv"
-
 	"github.com/go-macaron/session"
+	redis "github.com/go-redis/redis"
 	"github.com/go-xorm/xorm"
 	macaron "gopkg.in/macaron.v1"
 )
@@ -19,18 +19,21 @@ import (
 **/
 func FollowStep1Handler(sess session.Store, ctx *macaron.Context, x *xorm.Engine, log *log.Logger) {
 	//获取要订阅的人的ID
-	userId := ctx.Params(":userId")
-	if ok, u := QueryUserByIdWithEngine(x, userId); ok {
+	userId := ctx.Params(":id")
+	fmt.Print("-----userId," + userId)
+	u := new(model.User)
+	if has, _ := x.Id(userId).Get(u); has {
 		//获取有效的上线产品
 		products := ListOnlineProducts(x, log)
 		//获取当前用户信息
-		i := sess.Get("user").(model.User)
+		// i := sess.Get("user").(model.User)
 		ctx.Data["user2Follow"] = u
 		ctx.Data["products"] = products
-		ctx.Data["i"] = i
+		// ctx.Data["i"] = i
 		ctx.HTML(200, "follow_step1")
-
 	} else {
+		ctx.Data["msg"] = "没有找到对应订阅用户"
+		ctx.HTML(200, "error")
 		log.Printf("没有找到对应订阅用户%s", userId)
 	}
 }
@@ -45,34 +48,52 @@ func preCheckToFollow(i *model.User, user2Follow *model.User) (bool, string) {
 }
 
 /**
-订阅第二步奏
+订阅第二步
+提交订单
 进入收银台
 **/
-func FollowStep2Handler(sess session.Store, ctx *macaron.Context, x *xorm.Engine, log *log.Logger) {
+func FollowStep2Handler(sess session.Store, ctx *macaron.Context, x *xorm.Engine, redisCli *redis.Client) {
 
-	userId := ctx.Params(":userId")
-	if ok, u := QueryUserByIdWithEngine(x, userId); ok {
+	userId, _ := strconv.Atoi(ctx.Params(":id"))
+	followedUser := new(model.User)
+	if has, _ := x.Id(userId).Get(followedUser); has {
 		//获取有效的上线产品
 		Type := ctx.Params(":type")
+		fmt.Printf("%s", Type)
 		typeInt, _ := strconv.Atoi(Type)
-
-		if has, product := QueryProductByType(typeInt, x); has {
+		product := new(model.Product)
+		if has, _ := x.Where("types=?", typeInt).And("is_online=?", 1).Get(product); has {
+			fmt.Printf("OK")
 			//获取当前用户信息
-			i := sess.Get("user").(model.User)
+			i := sess.Get("user").(*model.User)
 			//订阅前检查
-			if canFollow, errMsg := preCheckToFollow(&i, u); canFollow {
+			if canFollow, errMsg := preCheckToFollow(i, followedUser); canFollow {
 				ctx.Data["product"] = product
+				if ok, order := GenerateOrder(x, redisCli, typeInt, i.Id, followedUser.Id); ok {
+					ctx.Data["ok"] = ok
+					ctx.Data["order"] = order
+					ctx.HTML(200, "follow_step2")
+				} else {
+					ctx.Data["msg"] = "下单失败，请重试"
+					ctx.HTML(200, "error")
+				}
+
 			} else {
-				ctx.Data["errMsg"] = errMsg
+				ctx.Data["msg"] = errMsg
+				ctx.HTML(200, "error")
 			}
+		} else {
+			log.Printf("没有产品%d", typeInt)
+			ctx.Data["msg"] = "没有找到对应的订阅产品"
+			ctx.HTML(200, "error")
 		}
 	}
 }
 
-/**
+/**·
 订阅成功后对提醒
 **/
-func NotifyAllAfterPay(x *xorm.Engine, log *log.Logger, orderId int64) {
+func NotifyAllAfterPay(x *xorm.Engine, orderId int64) {
 
 	//订单
 	s := x.NewSession()
@@ -90,7 +111,7 @@ func NotifyAllAfterPay(x *xorm.Engine, log *log.Logger, orderId int64) {
 		Chk(e2)
 		uf := new(model.UserFollow)
 		uf.UserId = order.UserId
-		uf.FollowedId = order.FollowedUserId
+		uf.FollowedId = order.FollowedId
 		uf.FollowType = order.ProductType
 		uf.FollowStart = time.Now()
 		uf.FollowEnd = time.Now().AddDate(0, 0, 7) //订阅结束
@@ -120,13 +141,42 @@ func NotifyAllAfterPay(x *xorm.Engine, log *log.Logger, orderId int64) {
 		if order.ProductType == 1 {
 			weeks = 4
 		}
+		// 【金修网络】恭喜您：%s已经成功订阅您的为期%d周股票模拟交易提醒，有效期为%s-%s。请及时处理详情请参考订单须知。
+		messageLog := new(model.MessageLog)
+		messageLog.Mobile = followedUser.Mobile
+		messageLog.Content =
+			fmt.Sprintf(model.TOBEFOLLOWED_OK_MSG, user.NickName, weeks, uf.FollowStart.Format(model.DATE_TIME_FORMAT),
+				uf.FollowEnd.Format(model.DATE_TIME_FORMAT))
+		messageLog.SendStatus = 0
 
-		// "尊敬的客户%s：您好，您已经成功订阅高手%s的为期%d的股票提醒，有效期为%s-%s,如有问题，请联系我们电话：%s"
-		content := fmt.Sprintf(model.FOLLOW_OK_MSG, user.UserName, followedUser.UserName, weeks, uf.FollowStart.Format(model.DATE_TIME_FORMAT), uf.FollowEnd.Format(model.DATE_TIME_FORMAT), model.HOT_LINE)
-		SendMessage(x, log, user.Mobile, content)
-		// 尊敬的客户%s：您好，%s已经成功订阅您的为期%d周股票提醒，有效期为%s-%s,如有问题，请联系我们电话：%s
-		SendMessage(x, log, followedUser.Mobile, fmt.Sprintf(model.TOBEFOLLOWED_OK_MSG, followedUser.UserName, user.UserName, weeks, uf.FollowStart.Format(model.DATE_TIME_FORMAT), uf.FollowEnd.Format(model.DATE_TIME_FORMAT), model.HOT_LINE))
-		s.Commit()
+		if _, err := s.Insert(messageLog); err == nil {
+			s.Commit()
+		} else {
+			log.Printf("出现异常%s", err.Error())
+			s.Rollback()
+		}
+
 	}
 
+}
+
+/**
+用户订阅列表
+**/
+func UserFollowListHandler(sess session.Store, ctx *macaron.Context, x *xorm.Engine, redisCli *redis.Client) {
+
+	followStatus, _ := strconv.Atoi(ctx.Params(":followStatus"))
+	_, user := GetSessionUser(sess)
+
+	ufs := make([]*model.UserFollow, 0)
+	s := x.Where("user_id=?", user.Id)
+	if followStatus != -1 {
+		s.And("follow_status=?", followStatus).Find(&ufs)
+	} else {
+		s.Find(&ufs)
+	}
+	//分页处理
+	ctx.Data["follows"] = ufs
+	ctx.JSON(200, ufs)
+	// ctx.HTML(200, "my_follow")
 }

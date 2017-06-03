@@ -49,6 +49,7 @@ type DayPostStock struct {
 type CurrentStockDetail struct {
 	Id           int64
 	StockCode    string    `xorm:"varchar(10) unique(idx_stock_code)"`
+	StockName    string    `xorm:"varchar(20)"`
 	CurrentPrice float64   `xorm:"decimal(16,2)"` //当前价格
 	Detail       string    //5档
 	Created      time.Time `xorm:"created"`

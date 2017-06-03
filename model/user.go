@@ -42,10 +42,10 @@ type User struct {
 	UserMark          string `xorm:"varchar(128)"`
 	UserRole          string `xorm:"varchar(20)"` //admin,customer
 	AreaId            int64
+	ReadContract      int8 `xorm:"int(4)"` //是否阅读协议 0:否，1:是
 	PhotoId           int64
 	Created           time.Time `xorm:"created"`
 	Updated           time.Time `xorm:"updated"`
-	Deleted           time.Time `xorm:"deleted"`
 	Version           int       `xorm:"version"`
 }
 
@@ -68,7 +68,10 @@ type UserAccount struct {
 	StockAmount     float64   `xorm:"decimal(32,2)"` //股票总市值
 	TotalAmount     float64   `xorm:"decimal(32,2)"` //总资产(总市值+可用金额)
 	TransFrequency  float64   `xorm:"decimal(16,2)"` //交易频率,
+	TotalTimes      int32     `xorm:"decimal(16,2)"` //失败次数,
+	SuccessTimes    int32     `xorm:"decimal(16,2)"` //成功率,
 	SuccessRate     float64   `xorm:"decimal(16,2)"` //成功率,
+	Rank            int       `xorm:"int(11)"`       //总收益排名
 	TransStart      time.Time //首次交易时间
 	TotalFollow     int       `xorm:"int(10) "`    //订阅量
 	UserLevel       int8      `xorm:"varchar(20)"` // 用户级别;1:小白；2：熟客；3：高手；4：骨灰
@@ -81,30 +84,15 @@ type UserAccount struct {
 用户当前订阅表
 **/
 type UserFollow struct {
-	Id          int64
-	UserId      int64     //订阅人
-	FollowedId  int64     //被订阅人
-	FollowType  int8      `xorm:"int(8)"` //0：周，1：月
-	FollowStart time.Time `xorm:"int(8)"` //订阅开始
-	FollowEnd   time.Time //订阅结束
-	FollowCost  float64   `xorm:"decimal(32,2)"`
-	Created     time.Time `xorm:"created"`
-	Updated     time.Time `xorm:"updated"`
-	Version     int       `xorm:"version"`
-}
-
-/**
-用户历史订阅表
-**/
-type UserFollowHistory struct {
-	Id          int64
-	UserId      int64     //订阅人
-	FollowedId  int64     //被订阅人
-	FollowType  int8      `xorm:"int(8)"` //0：周，1：月
-	FollowStart time.Time `xorm:"int(8)"` //订阅开始
-	FollowEnd   time.Time //订阅结束
-	FollowCost  float64   `xorm:"decimal(32,2)"`
-	Created     time.Time `xorm:"created"`
-	Updated     time.Time `xorm:"updated"`
-	Version     int       `xorm:"version"`
+	Id           int64
+	UserId       int64     //订阅人
+	FollowedId   int64     //被订阅人
+	FollowType   int8      `xorm:"int(8)"` //0：周，1：月
+	FollowStatus int8      `xorm:"int(8)"` //0:订阅中，1:待通知，2:订阅结束，3:已退订
+	FollowStart  time.Time //订阅开始
+	FollowEnd    time.Time //订阅结束
+	OrderId      int64     //订单ID
+	Created      time.Time `xorm:"created"`
+	Updated      time.Time `xorm:"updated"`
+	Version      int       `xorm:"version"`
 }

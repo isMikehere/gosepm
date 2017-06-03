@@ -53,7 +53,7 @@ func LoginPostHandler(user model.User, sess session.Store, ctx *macaron.Context,
 		u.LastLoginDate = time.Now()
 		sess.Set("user", u)
 		x.Update(u)
-		ctx.HTML(200, "user", u)
+		ctx.Redirect("/index.htm")
 	} else {
 		log.Printf("没有找到用户。。。%s", err)
 		ctx.HTML(200, "register")
@@ -209,7 +209,7 @@ func QueryUserByIdWithEngine(x *xorm.Engine, id interface{}) (bool, *model.User)
 
 	user := new(model.User)
 	if has, _ := x.Id(id).Get(user); has {
-		return user == nil, user
+		return user != nil, user
 
 	} else {
 		return false, nil
@@ -267,7 +267,7 @@ func hasFollowers(s *xorm.Session, log *log.Logger, followedId int64) bool {
 /**
 查询所有订阅者
 **/
-func listMyFollowers(s *xorm.Session, log *log.Logger, followedId int64) (bool, []*model.UserFollow) {
+func listMyFollowers(s *xorm.Session, followedId int64) (bool, []*model.UserFollow) {
 
 	userFollows := make([]*model.UserFollow, 0)
 	err := s.Where("followed_id=?", followedId).Find(&userFollows)
@@ -299,18 +299,38 @@ func SearchXUserHandler(ctx *macaron.Context, x *xorm.Engine) {
 **/
 func countFollowNumbers(s *xorm.Session, uid int64) int64 {
 	c1, _ := s.Where("followed_id=?", uid).Count(new(model.UserFollow))
-	c2, _ := s.Where("followed_id=?", uid).Count(new(model.UserFollowHistory))
-	return c1 + c2
+	return c1
 }
 
-func GetUserById(x *xorm.Engine, s *redis.Client, id int64) *model.User {
-	if user := GetRedisUser(s, id); user == nil {
-		if has, _ := x.Where("id=?", id).Get(user); has {
-			return user
-		} else {
+func GetUserById(x interface{}, s *redis.Client, id int64) *model.User {
+
+	sid := strconv.Itoa(int(id))
+	if user := GetRedisUser(s, sid); user == nil {
+		var user *model.User
+		switch t := x.(type) {
+		case *xorm.Engine:
+			{
+				user = new(model.User)
+				if has, _ := t.Id(id).Get(user); has {
+					return user
+				} else {
+					return nil
+				}
+			}
+		case *xorm.Session:
+			{
+				user = new(model.User)
+				if has, _ := t.Id(id).Get(user); has {
+					return user
+				} else {
+					return nil
+				}
+			}
+		default:
 			return nil
 		}
 	} else {
 		return user
 	}
+
 }

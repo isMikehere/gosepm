@@ -5,24 +5,27 @@ import "time"
 const (
 	DriverOfMysql     = "mysql"
 	DataSourceOfMysql = "root:zhsepm!@#$%@tcp(106.14.112.157:3306)/sepm?parseTime=true"
-	RedisHost         = "106.14.112.157:6379"
-	RedisPass         = "xceof"
+	// DataSourceOfMysql = "root:root@tcp(localhost:3306)/sepm?parseTime=true"
+	RedisHost = "106.14.112.157:6379"
+	RedisPass = "xceof"
 )
 
 const (
 	REGISTER_MSG        = "【金修网络】验证码：%s 您正在注册金修网络个人账号，请勿泄露校验码给任何人，以免造成账户或资金损失，5分钟后失效。"       //注册
 	FOLLOW_OK_MSG       = "【金修网络】恭喜您订阅成功，订单有效期为%d周。请保持手机畅通并及时查看你的订阅信息，详情请参考订阅须知。祝您投资顺利！"     //订阅成功通知订阅人
-	TOBEFOLLOWED_OK_MSG = "【金修网络】恭喜您%s：%s已经成功订阅您的为期%d周股票模拟交易提醒，有效期为%s-%s。请及时处理详情请参考订单须知。"    //订阅成功通知被订阅人
-	TRX_NOTIFY_MSG      = "【金修网络】尊敬的用户:您在模拟股票交易中订阅的用户%s在%s买入%s，成交价格%s %s股。以上数据来自于模拟股票交易仅供参考" //交易提醒
+	TOBEFOLLOWED_OK_MSG = "【金修网络】恭喜您：%s已经成功订阅您的为期%d周股票模拟交易提醒，有效期为%s-%s。请及时处理详情请参考订单须知。"      //订阅成功通知被订阅人
+	TRX_NOTIFY_DETAIL   = "【金修网络】尊敬的用户:您在模拟股票交易中订阅的用户%s在%s买入%s，成交价格%s %s股。以上数据来自于模拟股票交易仅供参考" //交易提醒
+	TRX_NOTIFY_MSG      = "【金修网络】尊敬的用户:您在本平台中订阅的用户%s有了新交易动态，查看请点击链接 %s"                      //交易提醒
 )
 const (
-	HOT_LINE         = "020-000000000"
-	DATE_TIME_FORMAT = "2006-01-02 15:04:05"
-	DATE_FORMAT      = "2006-01-02"
-	DATE_MONTH       = "2006-01"
-	DATE_FORMAT_1    = "2006-01-02 00:00:00"
-	DATE_FORMAT_2    = "2006-01-02 00:00"
-	TIME_FORMAT      = "15:04:05"
+	HOT_LINE          = "020-000000000"
+	DATE_TIME_FORMAT  = "2006-01-02 15:04:05"
+	DATE_FORMAT       = "2006-01-02"
+	DATE_MONTH        = "2006-01"
+	DATE_FORMAT_1     = "2006-01-02 00:00:00"
+	DATE_FORMAT_2     = "2006-01-02 00:00"
+	TIME_FORMAT       = "15:04:05"
+	DATE_ORDER_FORMAT = "20060102150405"
 )
 
 const (
@@ -77,8 +80,9 @@ const (
 )
 
 const (
-	RANK_SIZE int = 20
-	PAGE_SIZE int = 10
+	RANK_SIZE        int = 20
+	PAGE_SIZE        int = 10
+	MESSAGE_SEND_BUF     = 500
 )
 
 const ONE_SECOND = 1*time.Second + 10*time.Millisecond
@@ -97,7 +101,35 @@ const (
 	TASK_POLLING = "polling" //timer polling
 )
 
+// REDIS  KEYS
 const (
-	R_KEY_USERS  = "users"
-	R_KEY_STOCKS = "stocks"
+	R_KEY_USERS         = "users"
+	R_KEY_STOCKS        = "stocks"
+	R_KEY_STOCK_CODES   = "stock_codes"
+	R_KEY_STOCKS_DETAIL = "stock_detail"
+	R_KEY_MSGS          = "latest_msgs"
+)
+
+//网站配置
+const (
+	ME_HOST       = "localhost"
+	ME_SCHEMA     = "http"
+	ME_NOTIFY_API = ME_HOST + "/user/msg/" //通知api 接口
+)
+
+//short url api
+const (
+	SHORT_API = "http://suo.im/api.php?url=%s"
+)
+
+//短信API
+const (
+	MSG_SEND_API   = "http://www.6610086.net/jk.aspx"
+	MSG_LEFT_API   = "http://www./www.6610086.net/jkyy"
+	MSG_STATUS_API = "http://www./www.6610086.net/jk_new_report.aspx"
+	MSG_BIZ_CHAN   = "45"        // 商业渠道
+	MSG_SALE_CHAN  = "52"        // 营销渠道
+	MSG_ACCOUNT    = "tangguowu" // account
+	MSG_PASS       = "syg123456" // pass
+	MSG_TITLE      = "【金修网络】"    // account
 )
