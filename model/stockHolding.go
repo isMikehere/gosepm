@@ -21,8 +21,6 @@ type StockHolding struct {
 	AvailableNumber int32     `xorm:"int(10)"`       //当前可委托交易的量=stockNumber-(委托数量)
 	HoldingStatus   int8      `xorm:"int(4)"`        //持仓状态 1:持仓中，0：交易结束(所有的都已经交易)
 	TransPrice      float64   `xorm:"decimal(16,2)"` //成本价
-	EarningRate     float64   `xorm:"decimal(16,2)"` //收益率
-	Earning         float64   `xorm:"decimal(32,2)"` //盈亏
 	TransTime       time.Time //买进时间
 	Remark          string
 	Created         time.Time `xorm:"created"`

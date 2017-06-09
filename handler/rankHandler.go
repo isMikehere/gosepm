@@ -37,6 +37,10 @@ func GetDayRanks(x *xorm.Engine) (string, []*model.RankData) {
 			return dataRanks
 		}(dailyRanks)
 		syncAt = dailyRanks[0].Created.Format(model.DATE_TIME_FORMAT)
+		if syncAt == "0001-01-01 00:00:00" {
+			syncAt = time.Now().Format(model.DATE_TIME_FORMAT)
+		}
+
 		return syncAt, rankData
 
 	} else {
@@ -67,11 +71,14 @@ func GetWeekRanks(x *xorm.Engine) (string, []*model.RankData) {
 				dataRank.WeekRate = FormateRate(rank.EarningRate)
 				dataRank.TotalFollow = rank.TotalFollow
 				dataRanks[i] = dataRank
-
 			}
 			return dataRanks
 		}(ranks)
 		syncAt = newWeek.Created.Format(model.DATE_TIME_FORMAT)
+		if syncAt == "0001-01-01 00:00:00" {
+			syncAt = time.Now().Format(model.DATE_TIME_FORMAT)
+		}
+
 		return syncAt, rankData
 	} else {
 		return syncAt, nil
@@ -104,7 +111,11 @@ func GetMonthRanks(x *xorm.Engine) (string, []*model.RankData) {
 			return dataRanks
 		}(ranks)
 		syncAt = newMonth.Created.Format(model.DATE_TIME_FORMAT)
+		if syncAt == "0001-01-01 00:00:00" {
+			syncAt = time.Now().Format(model.DATE_TIME_FORMAT)
+		}
 		return syncAt, rankData
+
 	} else {
 		return syncAt, nil
 	}
@@ -124,7 +135,7 @@ func RankListHandler(ctx *macaron.Context, x *xorm.Engine, redisCli *redis.Clien
 		}
 
 	}
-	data := listTestRankData(x, page)
+	mapp, data := listTestRankData(x, page)
 	//周冠军次数
 	data = func(d []*model.RankData) []*model.RankData {
 		for _, rank := range d {
@@ -132,8 +143,8 @@ func RankListHandler(ctx *macaron.Context, x *xorm.Engine, redisCli *redis.Clien
 		}
 		return d
 	}(data)
-
 	ctx.Data["ranks"] = data
+	ctx.Data["mapp"] = mapp
 	ctx.HTML(200, "rank")
 }
 
@@ -141,20 +152,32 @@ func RankListHandler(ctx *macaron.Context, x *xorm.Engine, redisCli *redis.Clien
 获取模拟排行榜数据
 按照最大收益
 **/
-func listTestRankData(x *xorm.Engine, page int) []*model.RankData {
+func listTestRankData(x *xorm.Engine, page int) (map[string]interface{}, []*model.RankData) {
 
-	sql := "select ua.user_id,u.nick_name,ua.earning_rate," +
-		" wr.earning_rate week_rate,mr.earning_rate month_rate," +
-		" ua.total_follow from user_account ua  " +
+	c := new(struct {
+		Count int64
+	})
+
+	countSQL := "select count(1) count from user_account ua  " +
 		" left join user u on ua.user_id = u.id " +
 		" left join week_rank wr on wr.user_id = ua.user_id" +
-		" left join month_rank mr on mr.user_id = ua.user_id " +
-		" order by ua.earning desc limit ?,?"
+		" left join month_rank mr on mr.user_id = ua.user_id "
+	if _, err := x.Sql(countSQL).Get(c); err != nil && c.Count > 0 {
+		mapp := Paginator(page, c.Count)
+		sql := "select ua.user_id,u.nick_name,ua.earning_rate," +
+			" wr.earning_rate week_rate,mr.earning_rate month_rate," +
+			" ua.total_follow from user_account ua  " +
+			" left join user u on ua.user_id = u.id " +
+			" left join week_rank wr on wr.user_id = ua.user_id" +
+			" left join month_rank mr on mr.user_id = ua.user_id " +
+			" order by ua.earning desc limit ?,?"
 
-	ranks := make([]*model.RankData, 0)
-	start := model.PAGE_SIZE * page
-	x.Sql(sql, start, model.PAGE_SIZE).Find(&ranks)
-	return ranks
+		ranks := make([]*model.RankData, 0)
+		start := mapp["startIndex"]
+		x.Sql(sql, start, model.PAGE_SIZE).Find(&ranks)
+		return mapp, ranks
+	}
+	return nil, nil
 }
 
 /**

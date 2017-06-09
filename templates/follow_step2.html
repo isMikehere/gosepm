@@ -1,19 +1,25 @@
 {{template "header"}}
 {{template "nav"}}
+<input id="webpath" type="hidden" value="http://{{.webpath}}">
+<script>
+$(function(){
+    $("#pay").bind("click",function(){
+       window.location.href= $("#webpath").val()+"/pay/alipay/"+$("#orderId").val()
+    })
+})
+
+</script>
 
     <div >
         <span>
             下单成功{{.order.OrderSn}}
         </span>
-
-
     <div>
-      <span class="checked">  微信 </span>
+      <span class="checked" >  微信 </span>
       <span class="unchecked">  支付宝 </span>
       <span class="price"> {{.order.PayAmount}}</span> 
       <input id="orderId" type="hidden" value="{{.order.Id}}" />
-
-      <button id="pay"  value="确认付款">
+      <input type="button" id="pay"  value="确认付款">
     </div>
     </div>
  {{template "tail"}}

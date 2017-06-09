@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"strconv"
-	"time"
 
 	"../model"
 
@@ -26,10 +25,14 @@ func FollowStep1Handler(sess session.Store, ctx *macaron.Context, x *xorm.Engine
 		//获取有效的上线产品
 		products := ListOnlineProducts(x, log)
 		//获取当前用户信息
-		// i := sess.Get("user").(model.User)
+		_, u := GetSessionUser(sess)
 		ctx.Data["user2Follow"] = u
 		ctx.Data["products"] = products
-		// ctx.Data["i"] = i
+		ctx.Data["i"] = u
+		//生成token
+		token := RandomStringCode(16)
+		sess.Set("orderToken", token)
+		ctx.Data["orderToken"] = token
 		ctx.HTML(200, "follow_step1")
 	} else {
 		ctx.Data["msg"] = "没有找到对应订阅用户"
@@ -48,6 +51,25 @@ func preCheckToFollow(i *model.User, user2Follow *model.User) (bool, string) {
 }
 
 /**
+防止重复提交
+**/
+func isDoubleSumbit(sess session.Store, ctx *macaron.Context) bool {
+	token := ctx.Params(":orderToken")
+	sToken := sess.Get("orderToken")
+	if token == "" {
+		return true
+	}
+	if sToken == nil {
+		return true
+	}
+	if sToken.(string) != token {
+		return true
+	}
+
+	return false
+}
+
+/**
 订阅第二步
 提交订单
 进入收银台
@@ -56,6 +78,13 @@ func FollowStep2Handler(sess session.Store, ctx *macaron.Context, x *xorm.Engine
 
 	userId, _ := strconv.Atoi(ctx.Params(":id"))
 	followedUser := new(model.User)
+
+	if isDoubleSumbit(sess, ctx) {
+		ctx.Data["msg"] = "订单可能存在重复提交"
+		ctx.HTML(200, "error")
+		return
+	}
+
 	if has, _ := x.Id(userId).Get(followedUser); has {
 		//获取有效的上线产品
 		Type := ctx.Params(":type")
@@ -68,10 +97,13 @@ func FollowStep2Handler(sess session.Store, ctx *macaron.Context, x *xorm.Engine
 			i := sess.Get("user").(*model.User)
 			//订阅前检查
 			if canFollow, errMsg := preCheckToFollow(i, followedUser); canFollow {
+				//重复提交
+
 				ctx.Data["product"] = product
 				if ok, order := GenerateOrder(x, redisCli, typeInt, i.Id, followedUser.Id); ok {
 					ctx.Data["ok"] = ok
 					ctx.Data["order"] = order
+					sess.Delete("orderToken")
 					ctx.HTML(200, "follow_step2")
 				} else {
 					ctx.Data["msg"] = "下单失败，请重试"
@@ -103,58 +135,13 @@ func NotifyAllAfterPay(x *xorm.Engine, orderId int64) {
 	order := new(model.StockOrder)
 
 	if has, _ := x.Id(orderId).Get(order); has {
+
 		user := new(model.User)         //订阅人
 		followedUser := new(model.User) //被订阅人
 		_, e1 := x.Id(order.UserId).Get(user)
 		Chk(e1)
 		_, e2 := x.Id(order.UserId).Get(followedUser)
 		Chk(e2)
-		uf := new(model.UserFollow)
-		uf.UserId = order.UserId
-		uf.FollowedId = order.FollowedId
-		uf.FollowType = order.ProductType
-		uf.FollowStart = time.Now()
-		uf.FollowEnd = time.Now().AddDate(0, 0, 7) //订阅结束
-
-		_, err := x.Insert(uf)
-		if err != nil {
-			s.Rollback()
-			return
-		}
-		//更新用户的订阅量
-		userAccount := new(model.UserAccount)
-		if has, err = x.Where("user_id=?", followedUser.Id).Get(&userAccount); err != nil {
-			s.Rollback()
-			return
-		} else {
-			if has {
-				userAccount.TotalFollow++
-				_, err = x.Where("user_id=?", followedUser.Id).Update(userAccount)
-				if err != nil {
-					s.Rollback()
-					return
-				}
-			}
-		}
-
-		var weeks = 1
-		if order.ProductType == 1 {
-			weeks = 4
-		}
-		// 【金修网络】恭喜您：%s已经成功订阅您的为期%d周股票模拟交易提醒，有效期为%s-%s。请及时处理详情请参考订单须知。
-		messageLog := new(model.MessageLog)
-		messageLog.Mobile = followedUser.Mobile
-		messageLog.Content =
-			fmt.Sprintf(model.TOBEFOLLOWED_OK_MSG, user.NickName, weeks, uf.FollowStart.Format(model.DATE_TIME_FORMAT),
-				uf.FollowEnd.Format(model.DATE_TIME_FORMAT))
-		messageLog.SendStatus = 0
-
-		if _, err := s.Insert(messageLog); err == nil {
-			s.Commit()
-		} else {
-			log.Printf("出现异常%s", err.Error())
-			s.Rollback()
-		}
 
 	}
 
@@ -177,6 +164,5 @@ func UserFollowListHandler(sess session.Store, ctx *macaron.Context, x *xorm.Eng
 	}
 	//分页处理
 	ctx.Data["follows"] = ufs
-	ctx.JSON(200, ufs)
-	// ctx.HTML(200, "my_follow")
+	ctx.HTML(200, "my_follow")
 }

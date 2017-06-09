@@ -3,6 +3,7 @@ package handler
 import (
 	"fmt"
 
+	"github.com/go-macaron/session"
 	redis "github.com/go-redis/redis"
 	"github.com/go-xorm/xorm"
 	macaron "gopkg.in/macaron.v1"
@@ -15,7 +16,7 @@ import (
 /**
 首页请求
 **/
-func IndexHandler(ctx *macaron.Context, engine *xorm.Engine, redisCli *redis.Client) {
+func IndexHandler(sess session.Store, ctx *macaron.Context, engine *xorm.Engine, redisCli *redis.Client) {
 
 	//日排名
 	d_syncAt, dailyRanks := GetDayRanks(engine)
@@ -34,6 +35,11 @@ func IndexHandler(ctx *macaron.Context, engine *xorm.Engine, redisCli *redis.Cli
 	// //新闻动态
 	news := IndexNews(engine)
 	ctx.Data["news"] = news
+
+	if sess.Get("user") != nil {
+		ctx.Data["user"] = sess.Get("user")
+	}
+
 	ctx.HTML(200, "index")
 }
 

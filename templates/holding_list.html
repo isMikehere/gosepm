@@ -1,9 +1,35 @@
-
-{{template "header"}}
-{{template "nav"}}
+{{template "header" .}}
+{{template "nav" .}}
+{{ $r:=.r }}
+{{ $x:=.x }}
     <div id="body">
              <table>
-                 <input id="stockCode" placeholder="股票代码" value=""/>
+                <thead>
+                    <tr>
+                        <td>股票代码</td>
+                        <td>当前持股</td>
+                        <td>可用持股</td>
+                        <td>持仓成本价</td>
+                        <td>最新价</td>
+                        <td>持股市值</td>
+                        <td>浮动盈亏</td>
+                        <td>盈亏比例</td>
+                    </tr>
+                </thead>
+                  {{range .stockHoldings }}
+                    <tr>
+                        <td>{{.StockCode}}</td>   
+                        <td>{{.StockNumber}}</td>   
+                        <td>{{.AvailableNumber}}</td>   
+                        <td>{{.TransPrice}}</td>   
+                         <td>{{ $cp := StockDetail $r .StockCode 3 }} {{$cp}}</td>   
+                        <td>{{ StockValue $r .StockCode .StockNumber}}</td>   
+                        <td>{{ StockValue $r .StockCode .StockNumber}}</td>   
+                        <td>{{ FloatEarning $cp .TransPrice .StockNumber }} </td>
+                        <td>{{ EarningRate $cp .TransPrice }}</td>   
+                        <td>订阅</td>   
+                    </tr>
+                    {{end}} 
             </table>
     </div>
  {{template "tail"}}

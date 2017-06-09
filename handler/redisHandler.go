@@ -2,11 +2,16 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
+	"log"
 	"strconv"
 	"time"
 
+	"strings"
+
 	"../model"
 	redis "github.com/go-redis/redis"
+	"github.com/go-xorm/xorm"
 )
 
 func NewRedisClient() *redis.Client {
@@ -114,4 +119,70 @@ func GetRedisLatestMsg(client *redis.Client, key string) string {
 ***/
 func SetRedisLatestMsg(client *redis.Client, key, msg string) {
 	client.Set(key, msg, time.Hour*24*2)
+
+}
+
+/**
+ redis subscribe
+**/
+func SubscribeMsgChan(x *xorm.Engine, client *redis.Client) {
+
+	//发布chan
+	pubsub := client.Subscribe(model.R_MSG_SEND_CHAN)
+	defer pubsub.Close()
+
+	if msgi, err := pubsub.ReceiveTimeout(time.Second); err == nil {
+		subscr := msgi.(*redis.Subscription)
+		if subscr.Count == 1 {
+			log.Printf("subscribe %s ok", model.R_MSG_SEND_CHAN)
+		} else {
+			log.Printf("subscribe %s fail", model.R_MSG_SEND_CHAN)
+		}
+	} else {
+		log.Printf("err:%s", err.Error())
+	}
+
+	//监听
+	for {
+		if msg, _ := pubsub.ReceiveMessage(); msg != nil {
+			messageLog := new(model.MessageLog)
+			if err := json.Unmarshal([]byte(msg.Payload), messageLog); err == nil {
+
+				if messageLog.SendStatus == 0 {
+					if f, ret := sendMessage(messageLog.Mobile, messageLog.Content); f {
+						messageLog.SendStatus = 1
+						messageLog.RetBatchId = strings.Split(ret, "0:")[1]
+					} else {
+						messageLog.SendStatus = 2
+					}
+					fmt.Printf("save message to db: %s", messageLog.Mobile)
+					//消息结果发送到结果队列
+					go x.Insert(messageLog)
+
+				}
+			} else {
+				log.Printf("解析失败%s", msg.Payload)
+			}
+		}
+	}
+}
+
+/**
+发布消息
+**/
+func PublishMessage(client *redis.Client, chanName string, messageLog *model.MessageLog) bool {
+
+	if messageLog.SendStatus != 0 {
+		log.Printf("消息状态有误%s", messageLog.Mobile)
+		return false
+	}
+
+	log.Printf("发布消息：to chan:%s ,msg;%s", chanName, messageLog.Mobile)
+	bs, _ := json.Marshal(messageLog)
+	if _, e := client.Publish(chanName, string(bs)).Result(); e != nil {
+		log.Printf("发布消息：to chan:%s ,msg;%s", chanName, "false")
+		return false
+	}
+	log.Printf("发布消息：to chan:%s ,msg;%s", chanName, "true")
+	return true
 }

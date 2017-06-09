@@ -3,7 +3,6 @@ package handler
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"errors"
 	"log"
 	"time"
 
@@ -25,18 +24,20 @@ import (
 func LoginGetHandler(sess session.Store, ctx *macaron.Context, x *xorm.Engine) {
 
 	if sess.Get("user") != nil {
-		user := sess.Get("user").(model.User)
-		ctx.HTML(200, "index", user)
+		user := sess.Get("user").(*model.User)
+		ctx.Data["user"] = user
+		ctx.HTML(200, "index")
 	} else {
 		ctx.HTML(200, "login")
 	}
 }
 
 //登录
-func LoginPostHandler(user model.User, sess session.Store, ctx *macaron.Context, x *xorm.Engine, log *log.Logger, cpt *captcha.Captcha) {
+func LoginPostHandler(user model.User, sess session.Store, ctx *macaron.Context, x *xorm.Engine, r *redis.Client, cpt *captcha.Captcha) {
 	//验证码验证
 
 	if !cpt.VerifyReq(ctx.Req) {
+		ctx.Data["msg"] = "验证码错误"
 		ctx.HTML(200, "login")
 	}
 
@@ -47,24 +48,26 @@ func LoginPostHandler(user model.User, sess session.Store, ctx *macaron.Context,
 	log.Printf("%s,%s", user.UserName, hex.EncodeToString(cipherStr))
 
 	u := new(model.User)
-	if has, err := x.Where("user_name=? and password=? ", user.UserName, hex.EncodeToString(cipherStr)).Get(u); has {
+	if has, _ := x.Where("user_name=? and password=? ", user.UserName, hex.EncodeToString(cipherStr)).Get(u); has {
 		//写入session
 		u.LoginCount++
 		u.LastLoginDate = time.Now()
 		sess.Set("user", u)
 		x.Update(u)
 		ctx.Redirect("/index.htm")
+		//IndexHandler(sess, ctx, x, r)
 	} else {
-		log.Printf("没有找到用户。。。%s", err)
-		ctx.HTML(200, "register")
+		log.Println("用户名密码不正确")
+		ctx.Data["msg"] = "用户名密码不正确"
+		ctx.HTML(200, "login")
 	}
 }
 
 //注销
-func LogoutHandler(sess session.Store, ctx *macaron.Context, x *xorm.Engine, log *log.Logger) {
+func LogoutHandler(sess session.Store, ctx *macaron.Context, x *xorm.Engine) {
 
 	if sess.Get("user") != nil {
-		user := sess.Get("user").(model.User)
+		user := sess.Get("user").(*model.User)
 		log.Printf("用户%s注销", user.UserName)
 		sess.Delete("user")
 		ctx.HTML(200, "login")
@@ -73,42 +76,96 @@ func LogoutHandler(sess session.Store, ctx *macaron.Context, x *xorm.Engine, log
 	}
 }
 
+/**
+获取手机验证码
+**/
+func GetMobileCode(ctx *macaron.Context, x *xorm.Engine, r *redis.Client) {
+
+	jr := new(model.JsonResult)
+	//检查是否允许发短信
+	mobile := ctx.Params(":mobile")
+	if mobile != "" && checkSend(mobile) {
+		code := RandomIntCode()
+		r.Set(mobile, code, model.MSG_EXPIRE_DURATION) //expire
+		expired := time.Now().Add(model.MSG_EXPIRE_DURATION)
+		f, _ := sendMessage(mobile, fmt.Sprintf(model.REGISTER_MSG, code))
+		if f {
+			vc := new(model.VerifyCode)
+			vc.Mobile = mobile
+			vc.Code = code
+			vc.Expired = expired
+			x.Insert(vc)
+			jr.Code = "200"
+		} else {
+			jr.Code = "100"
+			jr.Msg = "发送短信失败"
+		}
+	}
+	ctx.JSON(200, jr)
+}
+func checkSend(mobile string) bool {
+	return true
+}
+
 //注册跳转
-func RegisterGetHandler(sess session.Store, ctx *macaron.Context, x *xorm.Engine, log *log.Logger, cpt *captcha.Captcha) {
+func RegisterGetHandler(sess session.Store, ctx *macaron.Context, x *xorm.Engine, cpt *captcha.Captcha) {
 	sess.Delete("user")
 	ctx.HTML(200, "register")
 }
 
 //注册保存
-func RegisterPostHandler(user model.User, sess session.Store, ctx *macaron.Context, x *xorm.Engine, log *log.Logger, cpt *captcha.Captcha) {
+func RegisterPostHandler(user model.User, sess session.Store, ctx *macaron.Context, x *xorm.Engine, redis *redis.Client, cpt *captcha.Captcha) {
 
 	//检验
-	if !cpt.VerifyReq(ctx.Req) {
-		ctx.HTMLSet(200, "register", "mike")
+	mobileCode := ctx.Query("mobileCode")
+	fmt.Printf("mobileCode:%s", mobileCode)
+	if ok := checkMobileCode(redis, user.Mobile, mobileCode); !ok {
+		ctx.Data["msg"] = "验证码有误"
+		ctx.HTML(200, "register")
+		return
 	}
 
 	//检查用户名和手机号是否存在
 	if ok, err := registerPreCheck(&user, x); !ok {
-		log.Printf("err:", err)
+		log.Printf("err:%s", err)
+		ctx.Data["msg"] = err
 		ctx.HTML(200, "register")
 	} else {
 		user.UserRole = model.CUSTOMER
 		user.UserStatus = model.USER_STATUS_OK
+		user.Password = Md5(user.Password)
 		id, err := x.Insert(&user)
 		if id > 0 {
 			log.Printf("用户%s注册成功", user.UserName)
 			userAccount := initUserAccount(&user)
-			_, err := x.Insert(userAccount)
-			Chk(err)
-			//注册完毕后的动作--->
-			go afterRegisterHandler(&user, x, log)
-			//<-------------end
-			log.Printf("用户%s注册结束", user.UserName)
+			if _, err := x.Insert(userAccount); err == nil {
+				//注册完毕后的动作--->
+				go afterRegisterHandler(&user, x)
+				//<-------------end
+				log.Printf("用户%s注册结束", user.UserName)
+				ctx.HTML(200, "register_success")
+			} else {
+				log.Printf("用户%s注册失败", user.UserName)
+				ctx.HTML(200, "register")
+			}
+
 		} else {
+			ctx.Data["msg"] = "注册失败！"
 			log.Printf("注册失败:%s", err)
 			ctx.HTML(200, "register")
 		}
 	}
+}
+
+/**
+mobile code checkk
+**/
+func checkMobileCode(r *redis.Client, mobile, mobileCode string) bool {
+
+	if code, _ := r.Get(mobile).Result(); code == mobileCode {
+		return true
+	}
+	return false
 }
 
 /**
@@ -136,7 +193,7 @@ func initUserAccount(user *model.User) *model.UserAccount {
 /**
 异步操作注册成功动作
 **/
-func afterRegisterHandler(user *model.User, x *xorm.Engine, log *log.Logger) {
+func afterRegisterHandler(user *model.User, x *xorm.Engine) {
 	log.Println("------email confirm----")
 }
 
@@ -191,15 +248,19 @@ func UserUpdateSaveHandler(user model.User, sess session.Store, ctx *macaron.Con
 /**
 注册检查
 **/
-func registerPreCheck(user *model.User, x *xorm.Engine) (bool, error) {
+func registerPreCheck(user *model.User, x *xorm.Engine) (bool, string) {
 
 	if count, _ := x.Where("user_name=? ", user.UserName).Count(new(model.User)); count > 0 {
-		return false, errors.New(fmt.Sprintf("用户名:%s已经存在", user.Mobile))
+		return false, fmt.Sprintf("用户名:%s已经存在", user.Mobile)
 	}
 	if count, _ := x.Where("mobile=? ", user.Mobile).Count(new(model.User)); count > 0 {
-		return false, errors.New(fmt.Sprintf("手机号:%s已经存在", user.Mobile))
+		return false, fmt.Sprintf("手机号:%s已经存在", user.Mobile)
 	}
-	return true, nil
+	fmt.Printf("%s,%d", user.Password, len(user.Password))
+	if len(user.Password) < 8 {
+		return false, "密码长度不够"
+	}
+	return true, ""
 }
 
 /**
@@ -253,7 +314,7 @@ func QueryUserAccoutByUserIdWithSession(x *xorm.Session, userId int64) (bool, *m
 /**
 查询用户是否用订阅用户
 **/
-func hasFollowers(s *xorm.Session, log *log.Logger, followedId int64) bool {
+func hasFollowers(s *xorm.Session, followedId int64) bool {
 
 	len, err := s.Where("followed_id=?", followedId).Count(new(model.UserFollow))
 	if err == nil {

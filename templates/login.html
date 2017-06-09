@@ -1,15 +1,57 @@
-{{define "login"}}
-<html>
-  {{template "header"}}
-<body>
+{{template "header" .}}
+<script>
+	$(function () {
+		$(".btn-login").bind("click", function () {
 
-<form id="loginForm" method="POST" action="login.htm"  >
-    <input id="user_name" name="user_name" placeholder="用户名"/>
-    <input id="password" name="password" placeholder="密码"/>
-    {{.Captcha.CreateHtml}} 
-    <input id="captcha" name="captcha" placeholder="验证码"/>
-    <input type="submit" value="登陆"/>
-</form>
+			if ($("#user_name").val() == "") {
+				alert("用户名为空")
+				return
+			}
+			if ($("#password").val() == "") {
+				alert("密码为空")
+				return
+			}
+			if ($("#captcha").val() == "") {
+				alert("验证码为空")
+				return
+			}
+			$("#loginForm").submit()
+		})
+
+	})
+
+</script>
+
+<body>
+	<div class="register-cont">
+		<div class="logo-box">
+			<img src="/public/img/logo.png" />
+			<p>国内最大的股票模拟平台</p>
+		</div>
+		<!--注册-->
+		<div class="register-box">
+			<form id="loginForm" method="POST" action="login.htm">
+				<h1 class="title">登录</h1>
+				<div class="input-box input-account">
+					<input type="text" placeholder="账户名" name="user_name" id="user_name" />
+				</div>
+				<div class="input-box input-psw">
+					<input type="password" placeholder="密码" name="password" id="password" />
+				</div>
+				<div class="input-code">
+					{{.Captcha.CreateHtml}}
+					<input id="captcha" name="captcha" placeholder="验证码" />
+				</div>
+				<p class="login-tip">{{.msg}}</p>
+				<div class="btn-login">登录</div>
+				<p class="login-tip">如果您还没有金修网络的ID，可点此<a href="/register.htm">注册账号</a></p>
+			</form>
+		</div>
+	</div>
+	<div class="register-footer">
+		<p>Copyright © 2017, Jinxiu Network Co., Ltd. All Rights Reserved.金修网络有限公司法律声明隐私条款</p>
+		<p>京ICP备14041720号-1京ICP证140622号京公网安备11010502025474</p>
+	</div>
 </body>
+
 </html>
-{{end}}

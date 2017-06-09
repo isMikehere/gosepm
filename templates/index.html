@@ -1,76 +1,227 @@
-{{template "header"}}
-    <div id="body">
-        <div class="slide">
-
-
-        </div>
-
-<div class="news">
-    <table>
-       {{range .news}}
-        <tr>
-<td>{{.Title}}</td>
-<td>{{.Content}}</td>
-        </tr>
-       {{end}}
-    </table>    
-</div>
-        <!--排名 -->
-    <div class="rankDiv">
-          <table css="rankTable">
-               <thead>
-                   <tr>
-                    <td>排名</td>
-                    <td>昵称</td>
-                    <td>股票代码</td>
-                    <td>收益率</td>
-                    <td>累计订阅</td>
-                    <td>操作</td>
-                    </tr>
-                </thead>  
-                <tbody>
-                  {{range .dailyRanks }}
+{{template "header" .}}
+	<body>
+		<div class="homepage-header">
+			<div class="homepage-hd-help">
+				<span>帮助</span>
+				<span>APP下载</span>
+				<span>加入收藏</span>
+				<span>东方财富网</span>
+			</div>
+			<div class="homepage-hd-login">
+				<span>我的账户</span>
+				<span><a href="register.htm">注册</a></span>
+				<span class="homepage-mine"></span>
+			</div>
+		</div>
+		<div class="homepage-search">
+			<div class="homepage-sch-logo">
+				<img src="/public/img/logo.png" />
+				<p>国内最大的股票模拟平台</p>
+			</div>
+			<div class="homepage-sch-sch">
+				<span>高手搜索</span>
+				<input type="text" name="" id="" value="" />
+				<img src="/public/img/Search.png" />
+			</div>
+		</div>
+		<div class="homepage-bigbacg">
+			<div class="homepage-bigbacg-navigation">
+				<span class="homepage-navigation-mine">我的</span>
+				<span>我要参赛</span>
+				<span>模拟排行榜</span>
+				<span>首页</span>
+			</div>
+			<div class="homepage-bigbacg-bigbacg">
+				<img src="/public/img/bg.png" />
+			</div>
+		</div>
+		<div class="hp-dh-list">
+			<div class="hp-dh-list-bg">
+				<img src="/public/img/bh.png" />
+			</div>
+			<div class="hp-dh-list-list ">
+                {{range .news}}
+               <div>{{.Title}}----{{.Content}} </div> 
+                {{end}}
+			</div>
+		</div>
+		<div class="hp-right-navigation">
+			<div class="hp-right-block"> 
+				<div>
+					<img src="/public/img/custom-service.png" />
+				</div>
+				<div>客服</div>
+			</div>
+			<div class="hp-right-block">
+				<div>
+					<img src="/public/img/share3.png" />
+				</div>
+				<div>分享</div>
+			</div>
+			<div class="hp-right-block">
+				<div>
+					<img src="/public/img/info.png" />
+				</div>
+				<div>消息</div>
+			</div>
+			<div class="hp-right-block">
+				<div>
+					<img src="/public/img/public.png" />
+				</div>
+				<div>公众号</div>
+			</div>
+			<div class="hp-right-block">
+				<div>
+					<img src="/public/img/app.png" />
+				</div>
+				<div>APP</div>
+			</div>
+		</div>
+		
+		<div class="hp-recommend">
+			<div class="hp-recommend-header">
+				<div class="hp-recommend-header-img1">
+					<img src="/public/img/first.png" />
+				</div>
+				<div class="hp-recommend-day">日冠军推荐</div>
+				<div>
+					<img src="/public/img/info3.png" />
+				</div>
+				<div class="hp-recommend-time">更新于{{.d_syncAt}}</div>
+			</div>
+			<table class="hp-recommend-table">
+				<thead>
+					<tr>
+						<th>排名</th>
+						<th>昵称</th>
+						<th>股票代码</th>
+						<th>收益率</th>
+						<th>累计订阅量</th>
+						<th>操作</th>
+					</tr>
+				</thead>
+				<tbody>
+                 {{range .dailyRanks }}
                     <tr>
-                        <td>{{.Rank}}</td>   
+                        <th>{{.Rank}}</th>   
                         <td>{{.NickName}}</td>   
                         <td>{{.StockCode}}</td>   
                         <td>{{.DayRate}}</td>   
                         <td>{{.TotalFollow}}</td>   
-                        <td>订阅</td>   
-
-                    </tr>
-                    {{end}}  
-                      {{range .weekRanks }}
-                    <tr>
-                     <td>{{.Rank}}</td>   
-                        <td>{{.NickName}}</td>   
-                        <td>{{.StockCode}}</td>   
-                        <td>{{.WeekRate}}</td>   
-                        <td>{{.TotalFollow}}</td>   
-                        <td>订阅</td>   
-
-
-                    </tr>
-                    {{end}}  
-                    {{range .monthRanks }}
-                    <tr>
-                       <td>{{.Rank}}</td>   
-                        <td>{{.NickName}}</td>   
-                        <td>{{.StockCode}}</td>   
-                        <td>{{.MonthRate}}</td>   
-                        <td>{{.TotalFollow}}</td>   
-                        <td>订阅</td>   
- 
-
+                        <td><span class="dy"><a href="/user/follow/{{.UserId}}">订阅</a></span></td>   
                     </tr>
                     {{end}} 
-                </tbody>    
-          </table>
-          
+					</tr>
+				</tbody>
+			</table>
+		</div>	
+		<div class="hp-recommend-line"></div>
+		<div class="hp-recommend">
+			<div class="hp-recommend-header">
+				<div class="hp-recommend-header-img1">
+					<img src="/public/img/first2.png" />
+				</div>
+				<div class="hp-recommend-day">周冠军推荐</div>
+				<div>
+					<img src="/public/img/info3.png" />
+				</div>
+				<div class="hp-recommend-time">更新于{{.w_syncAt}}</div>
+			</div>
+			<table class="hp-recommend-table">
+				<thead>
+					<tr>
+						<th>排名</th>
+						<th>昵称</th>
+						<th>股票代码</th>
+						<th>收益率</th>
+						<th>累计订阅量</th>
+						<th>操作</th>
+					</tr>
+				</thead>
+				<tbody>
+                  {{range .weekRanks }}
+                    <tr>
+                     <th>{{.Rank}}</th>   
+                        <td>{{.NickName}}</td>   
+                        <td>{{.StockCode}}</td>   
+                        <td  class="text-strong">{{.WeekRate}}</td>   
+                        <td>{{.TotalFollow}}</td>   
+                        <td><span class="dy"><a href="/user/follow/{{.UserId}}">订阅</a></span></td>   
+                    </tr>
+                    {{end}}  
+				</tbody>
+			</table>
 
+		</div>
+		<div class="hp-recommend-line"></div>
+		
+		<div class="hp-recommend">
+			<div class="hp-recommend-header">
+				<div class="hp-recommend-header-img1">
+					<img src="/public/img/first3.png" />
+				</div>
+				<div class="hp-recommend-day">月冠军推荐</div>
+				<div>
+					<img src="/public/img/info3.png" />
+				</div>
+				<div class="hp-recommend-time">更新于{{.m_syncAt}}</div>
+			</div>
+			<table class="hp-recommend-table">
+				<thead>
+					<tr>
+						<th>排名</th>
+						<th>昵称</th>
+						<th>股票代码</th>
+						<th>收益率</th>
+						<th>累计订阅量</th>
+						<th>操作</th>
+					</tr>
+				</thead>
+				<tbody>
+				 {{range .monthRanks }}
+                    <tr>
+                       <th>{{.Rank}}</th>   
+                        <td>{{.NickName}}</td>   
+                        <td>{{.StockCode}}</td>   
+                        <td class="text-strong">{{.MonthRate}}</td>   
+                        <td>{{.TotalFollow}}</td>   
+                        <td><span class="dy"><a href="/user/follow/{{.UserId}}">订阅</a></span></td>   
+                    </tr>
+                 {{end}} 
+				</tbody>
+			</table>
+		</div>
+		
+		<div class="hp-declare">
+			<p>
+				免责声明：金修金融将尽最大努力保证用户数据的安全性和私密性，但如因不可抗力造成用户数据丢失或错误，金修金融不承诺相关数据能100%恢复，
+			</p>
+			<p>
+				敬请留意。如发现有用户通过非正常途径获取奖金，金修金融有权不发放奖金或直接冻结其原有奖金，而且永久取消兑奖资格。
+			</p>
+			<p>
+				风险提示：金修金融任何用户或者嘉宾的言论，仅代表个人观点，并非平台观点，投资需要谨慎操作并且独立思考
+			</p>
+		</div>
+		<div class="hp-footer">
+			<div class="hp-footer-declare">
+				<p>
+					客户服务热线：4006900000-2-2 欢迎批评指正
+				</p>
+				<p>
+					常见问题解答 互联网违法和不良信息举报 金修意见反馈留言板
+				</p>
+				<p>
+					金修简介 | About Sina | 广告服务 | 联系我们 | 招聘信息 | 网站律师 | JINXIU English | 通行证注册 | 产品答疑
+				</p>
+				<p>
+					Copyright © 1996-2017 JINXIU Corporation, All Rights Reserved
+				</p>
+				<p>
+					金修金融公司　版权所有
+				</p>
+			</div>
+		</div>
+	</body>
 
-
-    </div>
-
-    </div>
- {{template "tail"}}
+</html>

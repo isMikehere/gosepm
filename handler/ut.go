@@ -2,9 +2,11 @@ package handler
 
 import (
 	"bytes"
+	"crypto/md5"
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -29,12 +31,32 @@ func Chk(err error) {
 	}
 }
 
+/**
+md5 加密
+**/
+func Md5(text string) string {
+	hash := md5.New()
+	hash.Write([]byte(text)) // 需要加密的字符串为 123456
+	cipherStr := hash.Sum(nil)
+	return hex.EncodeToString(cipherStr)
+}
+
 /*
  格式化比例
 */
-
 func FormateRate(rate float64) string {
-	return fmt.Sprintf("%s%s", decimal.NewFromFloat(rate).Mul(decimal.New(100, 0)), "%")
+	return fmt.Sprintf("%s%s", decimal.NewFromFloat(rate).Mul(decimal.New(100, 0)).StringFixed(2), "%")
+}
+
+/*
+ 掩码
+*/
+func MaskStockCode(code string) string {
+
+	if len := len(code); len > 0 {
+		return strings.Repeat("*", len)
+	}
+	return "N/A"
 }
 
 /**
@@ -213,13 +235,13 @@ func ConcatStockList(stockList interface{}) string {
 		{
 			len := len(t)
 			if len == 1 {
-				buffer.WriteString(t[0].StockCode)
+				buffer.WriteString(AddExcToStockCode(t[0].StockCode))
 			} else {
 				for i, v := range t {
 					if i < len-1 {
-						buffer.WriteString(v.StockCode + ",")
+						buffer.WriteString(AddExcToStockCode(v.StockCode) + ",")
 					} else {
-						buffer.WriteString(v.StockCode)
+						buffer.WriteString(AddExcToStockCode(v.StockCode))
 					}
 				}
 			}
@@ -229,13 +251,13 @@ func ConcatStockList(stockList interface{}) string {
 		{
 			len := len(t)
 			if len == 1 {
-				buffer.WriteString(t[0].StockCode)
+				buffer.WriteString(AddExcToStockCode(t[0].StockCode))
 			} else {
 				for i, v := range t {
 					if i < len-1 {
-						buffer.WriteString(v.StockCode + ",")
+						buffer.WriteString(AddExcToStockCode(v.StockCode) + ",")
 					} else {
-						buffer.WriteString(v.StockCode)
+						buffer.WriteString(AddExcToStockCode(v.StockCode))
 					}
 				}
 			}
@@ -361,9 +383,16 @@ func GetUserNickName(x *xorm.Engine, r *redis.Client, id interface{}) string {
 	return ""
 }
 
+/*
+格式化标准日期
+**/
 func FormatDate(d time.Time) string {
 	return d.Format(model.DATE_FORMAT)
 }
+
+/*
+格式化日期时间
+*/
 func FormatDateTime(d time.Time) string {
 	return d.Format(model.DATE_TIME_FORMAT)
 }
@@ -397,4 +426,227 @@ func ShortMe(path string) (bool, string) {
 	} else {
 		return true, shortPath
 	}
+}
+
+//计算股票市值
+func StockValue(r *redis.Client, stockCode string, num int32) string {
+
+	if j := GetRedisStockDetail(r, stockCode); j != "" {
+		if x := strings.Split(j, ","); len(x) > 0 {
+			p, _ := decimal.NewFromString(x[3])
+			return decimal.New(int64(num), 0).Mul(p).StringFixed(2)
+		}
+	}
+	return model.NA
+}
+
+/**
+根据 @readme中股票的下表获取股票某一个字段的值
+-1 表示整个信息
+**/
+func StockDetail(r *redis.Client, stockCode string, index int) string {
+
+	if j := GetRedisStockDetail(r, stockCode); j != "" {
+		if x := strings.Split(j, ","); len(x) > 0 && index < len(x) {
+			return x[index]
+		}
+	}
+	return model.NA
+}
+
+/**
+浮动盈亏,盈亏比例
+返回值：earning
+**/
+func FloatEarning(cp interface{}, transPrice interface{}, num int32) string {
+
+	var earning string
+	var x, y decimal.Decimal
+	switch t := cp.(type) {
+	case string:
+		{
+			x, _ = decimal.NewFromString(t)
+			switch tp := transPrice.(type) {
+			case string:
+				{
+					y, _ = decimal.NewFromString(tp)
+				}
+			case float32:
+				{
+					y = decimal.NewFromFloat(float64(tp))
+
+				}
+			case float64:
+				{
+					y = decimal.NewFromFloat(tp)
+				}
+			}
+		}
+
+	case float32:
+		{
+			x = decimal.NewFromFloat(float64(t))
+
+			switch tp := transPrice.(type) {
+			case string:
+				{
+					y, _ = decimal.NewFromString(tp)
+				}
+			case float32:
+				{
+					y = decimal.NewFromFloat(float64(tp))
+
+				}
+			case float64:
+				{
+					y = decimal.NewFromFloat(tp)
+				}
+			}
+		}
+	case float64:
+		{
+			x = decimal.NewFromFloat(t)
+			switch tp := transPrice.(type) {
+			case string:
+				{
+					y, _ = decimal.NewFromString(tp)
+				}
+			case float32:
+				{
+					y = decimal.NewFromFloat(float64(tp))
+				}
+			case float64:
+				{
+					y = decimal.NewFromFloat(tp)
+				}
+			}
+		}
+	}
+
+	earning = decimal.New(int64(num), 0).Mul(x.Sub(y)).StringFixed(2)
+	return earning
+}
+
+/**
+盈亏比例
+rate
+**/
+func EarningRate(cp interface{}, transPrice interface{}) string {
+
+	var rate string
+	var x, y decimal.Decimal
+	switch t := cp.(type) {
+	case string:
+		{
+			x, _ = decimal.NewFromString(t)
+			switch tp := transPrice.(type) {
+			case string:
+				{
+					y, _ = decimal.NewFromString(tp)
+				}
+			case float32:
+				{
+					y = decimal.NewFromFloat(float64(tp))
+
+				}
+			case float64:
+				{
+					y = decimal.NewFromFloat(tp)
+				}
+			}
+		}
+
+	case float32:
+		{
+			x = decimal.NewFromFloat(float64(t))
+
+			switch tp := transPrice.(type) {
+			case string:
+				{
+					y, _ = decimal.NewFromString(tp)
+				}
+			case float32:
+				{
+					y = decimal.NewFromFloat(float64(tp))
+
+				}
+			case float64:
+				{
+					y = decimal.NewFromFloat(tp)
+				}
+			}
+		}
+	case float64:
+		{
+			x = decimal.NewFromFloat(t)
+			switch tp := transPrice.(type) {
+			case string:
+				{
+					y, _ = decimal.NewFromString(tp)
+				}
+			case float32:
+				{
+					y = decimal.NewFromFloat(float64(tp))
+				}
+			case float64:
+				{
+					y = decimal.NewFromFloat(tp)
+				}
+			}
+		}
+	}
+	if y.Cmp(decimal.Zero) == 0 {
+		return model.NA
+	}
+	f, _ := x.Sub(y).DivRound(y, 2).Float64()
+	rate = FormateRate(f)
+	return rate
+}
+
+/*
+
+ */
+func isMobile(mobile string) bool {
+	return true
+}
+
+/**
+数字``
+**/
+func RandomIntCode() string {
+	var ret string
+	rand.Seed(int64(time.Now().Nanosecond()))
+	for i := 0; i < 4; i++ {
+		ret += strconv.Itoa(rand.Intn(10))
+	}
+	return ret
+}
+
+/**
+字母
+**/
+func RandomStringCode(len int) string {
+	var ret string
+	rand.Seed(int64(time.Now().Nanosecond()))
+	arrays := strings.Split("abcdefghijklmnopqrstuvwxyz", "")
+	for i := 0; i < len; i++ {
+		ret += arrays[rand.Intn(26)]
+	}
+	return ret
+}
+
+// 字符串判断空
+func StringNul(x string) bool {
+	if x == "" {
+		return true
+	}
+	return false
+}
+
+func checkInService() bool {
+	return true
+}
+
+func GenerateRandomChar() {
+
 }

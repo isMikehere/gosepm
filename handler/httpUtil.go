@@ -48,7 +48,7 @@ func HttpPost(path string, params map[string]string) (bool, string) {
 	body, _ := ioutil.ReadAll(resp.Body)
 	if resp.StatusCode == 200 { //相应成功
 		bodyStr := string(body)
-		return false, bodyStr
+		return true, bodyStr
 	} else {
 		return false, ""
 	}

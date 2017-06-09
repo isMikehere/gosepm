@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"log"
 	"runtime"
+	"strings"
 	"time"
 
 	"./db"
@@ -26,6 +27,7 @@ import (
 var engine *xorm.Engine
 var myLogger *log.Logger
 var redisCli *redis.Client
+var redisCli2 *redis.Client
 var m *macaron.Macaron
 
 func ConfigEngine(x *xorm.Engine) {
@@ -41,7 +43,7 @@ func ConfigEngine(x *xorm.Engine) {
 	//缓存
 	// cacher := xorm.NewLRUCacher(xorm.NewMemoryStore(), 1000)
 	// engine.SetDefaultCacher(cacher)
-	//日志级别
+	// 日志级别
 	x.Logger().SetLevel(core.LOG_INFO)
 }
 
@@ -81,8 +83,9 @@ func initRedisClient() {
 	//映射redis
 	fmt.Println("new redis-client... ")
 	redisCli = handler.NewRedisClient()
-	redisCli.Set("name", "mike1", 0)
+	redisCli2 = handler.NewRedisClient()
 	m.Map(redisCli)
+	m.Map(redisCli2)
 	fmt.Printf("redis-client init ok%s", (redisCli == nil))
 }
 
@@ -147,7 +150,30 @@ func webgo() {
 	// m.Use(pongo2.Pongoer())
 	//session存储内存
 
-	m.Use(session.Sessioner())
+	m.Use(session.Sessioner(session.Options{
+		// 提供器的名称，默认为 "memory"
+		Provider: "memory",
+		// 提供器的配置，根据提供器而不同
+		ProviderConfig: "",
+		// 用于存放会话 ID 的 Cookie 名称，默认为 "MacaronSession"
+		CookieName: "MacaronSession",
+		// Cookie 储存路径，默认为 "/"
+		CookiePath: "/",
+		// GC 执行时间间隔，默认为 3600 秒
+		Gclifetime: 3600,
+		// 最大生存时间，默认和 GC 执行时间间隔相同
+		Maxlifetime: 3600,
+		// 仅限使用 HTTPS，默认为 false
+		Secure: false,
+		// Cookie 生存时间，默认为 0 秒
+		CookieLifeTime: 0,
+		// Cookie 储存域名，默认为空
+		Domain: "",
+		// 会话 ID 长度，默认为 16 位
+		IDLength: 16,
+		// 配置分区名称，默认为 "session"
+		Section: "session",
+	}))
 
 	// m.Use(session.Sessioner(session.Options{
 	// 	Provider: "redis",
@@ -175,6 +201,14 @@ func webgo() {
 			"GetUserNickName": handler.GetUserNickName,
 			"FormatDate":      handler.FormatDate,
 			"FormatDateTime":  handler.FormatDateTime,
+			"StockValue":      handler.StockValue,    //股票市值
+			"MaskStockCode":   handler.MaskStockCode, //股票掩码
+			"StockDetail":     handler.StockDetail,   //股票具体某字段值
+			"FloatEarning":    handler.FloatEarning,  //股票具体某字段值
+			"EarningRate":     handler.EarningRate,   //股票具体某字段值
+			"Mul100": func(num int32) int32 {
+				return num * 100
+			},
 		}},
 		// 模板语法分隔符，默认为 ["{{", "}}"]
 		Delims: macaron.Delims{"{{", "}}"},
@@ -185,9 +219,9 @@ func webgo() {
 		// 渲染具有缩进格式的 XML，默认为不缩进
 		IndentXML: true,
 		// 渲染具有前缀的 JSON，默认为无前缀
-		PrefixJSON: []byte("macaron"),
+		// PrefixJSON: []byte(),
 		// 渲染具有前缀的 XML，默认为无前缀
-		PrefixXML: []byte("macaron"),
+		// PrefixXML: []byte("macaron"),
 		// 允许输出格式为 XHTML 而不是 HTML，默认为 "text/html"
 		HTMLContentType: "text/html",
 	}))
@@ -209,28 +243,26 @@ func webgo() {
 
 	// filter login status before and after a request
 
-	m.Use(func(sess session.Store, ctx *macaron.Context, log *log.Logger) {
+	m.Use(func(sess session.Store, ctx *macaron.Context, x *xorm.Engine, r *redis.Client, f *session.Flash) {
 
 		log.Println("-----before a request--" + ctx.Req.RequestURI)
 		ctx.Data["webpath"] = ctx.Req.Host
-		if sess.Get("user") == nil {
-			u := new(model.User)
-			engine.Id(2).Get(u)
-			sess.Set("user", u)
-		}
+		ctx.Data["x"] = x
+		ctx.Data["r"] = r
 
-		// url := ctx.Req.RequestURI
-		// if strings.Contains(url, "/login") || strings.Contains(url, "index.htm") || strings.Contains(url, ".js") || strings.Contains(url, ".css") {
-		// 	ctx.Next()
-		// } else {
-		// 	if sess.Get("user") == nil {
-		// 		ctx.Redirect("/login.htm")
-		// 	} else {
-		// 		ctx.Next()
-		// 	}
-		// }
-		ctx.Next()
-		log.Println("-----before a request--" + ctx.Req.RequestURI)
+		url := ctx.Req.RequestURI
+		if strings.Contains(url, "/login") || strings.Contains(url, "/register.htm") || strings.Contains(url, "index.htm") || strings.Contains(url, ".js") || strings.Contains(url, ".css") {
+			ctx.Next()
+		} else {
+			u := sess.Get("user")
+			if u == nil {
+				ctx.Redirect("/login.htm")
+			} else {
+				ctx.Next()
+				ctx.Data["user"] = u
+			}
+		}
+		log.Println("-----after a request--" + ctx.Req.RequestURI)
 	})
 
 	/*------------------------routes-------------------------------------------*/
@@ -248,7 +280,9 @@ func webgo() {
 	m.Get("/success.htm", func(ctx *macaron.Context) {
 		ctx.HTML(200, "success")
 	})
-
+	m.NotFound(func(ctx *macaron.Context) {
+		ctx.HTML(200, "notfound")
+	})
 	//用户
 	m.Group("/user", func() {
 		m.Get("/:id", handler.UserDetailHandler)
@@ -259,28 +293,33 @@ func webgo() {
 		m.Group("/account", func() {
 			m.Get("/:id", handler.UserAccountHandler)
 		})
+
 		m.Group("/follow", func() {
 			m.Get("/:id", handler.FollowStep1Handler)
-			m.Post("/:id/:type", handler.FollowStep2Handler) //下单---》进入收银台
-			m.Post("/:id/:type", handler.FollowStep2Handler) //下单---》进入收银台
+			m.Get("/:id/:type/:orderToken", handler.FollowStep2Handler) //下单---》进入收银台
 		})
 
 		//持仓
 		m.Group("/holding", func() {
-			m.Get("", handler.MyHoldingHandler)        //我的持仓
-			m.Get("/:page", handler.MyPageableHandler) //分页持仓
+			m.Get("/:uid", handler.MyHoldingHandler)           //我的持仓
+			m.Get("/page/:page", handler.MyHoldingListHandler) //分页持仓
 		})
 		//委托
 		m.Group("/entrust", func() {
-			m.Get("", handler.TodayEntrustHandler)       //当日委托
-			m.Get("/:page", handler.TodayEntrustHandler) //当日成交
+			m.Get("/", handler.TodayEntrustHandler)       //当日委托列表
+			m.Get("/:page", handler.MyEntrustListHandler) //当日成交列表
 		})
+		//消息提醒
 		m.Group("/msg", func() {
-			// m.Get("/:msgKey", handle.LatestMsgHandler) //查看消息
-
+			m.Get("/:msgKey", handler.LatestMsgHandler) //查看消息
+			m.Get("/msg", handler.MsgHandler)           //查看消息
 		})
-
+		m.Get("/trxRate/:uid", handler.TrxRateDataChartHander)
+		m.Get("/rankDataChart/:uid", handler.RankDataChartHandler)
 	})
+
+	m.Post("/mobileCode/:mobile", handler.GetMobileCode) //获取手机验证码
+
 	//follow
 	m.Get("/myFollow/:followStatus", handler.UserFollowListHandler)
 	m.Get("/myOrder/:orderStatus", handler.OrderListHandler)
@@ -292,18 +331,20 @@ func webgo() {
 
 	//交易相关
 	m.Group("/trx", func() {
-		m.Get("", handler.TrxHandler)
+		m.Get("/", handler.TrxHandler)                         //跳转交易
+		m.Post("/toEntrust", handler.TrxEntrustPostHandler)    //委托
 		m.Post("/cancel/:entId", handler.CancelEntrustHandler) //撤单
 	})
 
 	//股票基础数据
-	m.Get("/stock5/:stockCode", handler.Stock5StageHander)
-
+	m.Group("/stock", func() {
+		m.Get("/:stockCode", handler.Stock5StageHander)
+	})
 	//支付相关
 	if macaron.Env == macaron.DEV {
-		m.Post("/pay/:orderId", handler.TestPayHandler)
+		m.Get("/pay/:payType/:orderId", handler.TestPayHandler)
 	} else {
-		m.Post("/pay/:orderId", handler.AlipayNotifyHandler)
+		m.Post("/pay/:payType/:orderId", handler.AlipayNotifyHandler)
 	}
 	m.Post("/alipay/notify", handler.AlipayNotifyHandler)
 
@@ -317,13 +358,20 @@ func webgo() {
 	//排名
 	m.Get("/rank/:page", handler.RankListHandler)
 
+	//***************test ******************
 	m.Get("/test.htm", func(ctx *macaron.Context, x *xorm.Engine, r *redis.Client) {
-		user := new(model.User)
-		user.NickName = "sophie"
-		x.Insert(user)
-		ctx.JSON(200, user)
+
+		ctx.HTML(200, "ac")
+	})
+	m.Get("/searchStock.htm", func(ctx *macaron.Context, x *xorm.Engine, r *redis.Client) {
+		stocks := handler.GetRedisStockCodes(r)
+		ctx.JSON(200, stocks)
 	})
 
+	//测试分页
+	m.Get("/pageable/:page", handler.TestPage)
+
+	//***************test *****************
 	//----------------------对外接口----------------------------------------------/
 
 	/*------------------------routes-------------------------------------------*/
@@ -337,9 +385,8 @@ func main() {
 	initXormEngin()
 	//数据库同步
 
-	SyncTable(new(model.NotifyFollow), new(model.StockTrxInfo),
-		new(model.MessageLog))
-	// initRedisClient()
+	SyncTable(new(model.User))
+	initRedisClient()
 	//·
 	var numCores = flag.Int("n", 2, "number of CPU cores to use")
 	flag.Parse()
@@ -347,5 +394,6 @@ func main() {
 	// initCache()
 	//开启定时任务
 	// go handler.StartSchedule(handler.InitScheduleJobs(engine, redisCli))
-	// webgo()
+	go handler.SubscribeMsgChan(engine, redisCli2)
+	webgo()
 }

@@ -64,7 +64,20 @@ type News struct {
 json result
 **/
 type JsonResult struct {
-	Code string //100:fail，200:success
-	Data interface{}
-	Msg  string
+	Code string      `json:"code"` //100:fail，200:success
+	Data interface{} `json:"data"`
+	Msg  string      `json:"msg"`
+}
+
+/**
+注册短信发送限制
+**/
+type VerifyCode struct {
+	Id      int64
+	Mobile  string `xorm:"varchar(11)"`
+	Code    string `xorm:"varchar(10)"`
+	Expired time.Time
+	Created time.Time `xorm:"created"`
+	Updated time.Time `xorm:"updated"`
+	Version int       `xorm:"version"`
 }

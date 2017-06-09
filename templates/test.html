@@ -1,11 +1,16 @@
+
+{{template "header"}}
+<script>
+
+            $.getJSON('http://localhost:4000/pageable/2', function (json) {
+               var s= $.parseJSON(json)
+                 values = json.Data;
+            });
+
+</script>
+
 <table>
 <tr>
-   {{ GetUserNickName .x .r 1 }}
-
-   {{if eq 1 0}}  
-                                    一周  
-                                {{else if eq  2 2}}  
-                                   一月
-                                {{end}}
+         
 </tr>
 </table>

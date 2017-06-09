@@ -16,11 +16,10 @@ type StockEntrust struct {
 	RentrustNumber int32   //实际交易数量
 	EntrustTime    time.Time
 	EntrustStatus  int8 //0:已交易，1:委托中，2:已取消，3:没有交易
-
-	Remark  string
-	Created time.Time `xorm:"created"`
-	Updated time.Time `xorm:"updated"`
-	Version int       `xorm:"version"`
+	Remark         string
+	Created        time.Time `xorm:"created"`
+	Updated        time.Time `xorm:"updated"`
+	Version        int       `xorm:"version"`
 }
 
 /**

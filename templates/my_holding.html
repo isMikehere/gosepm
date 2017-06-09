@@ -1,9 +1,184 @@
+{{template "header" .}} {{template "nav" .}} {{ $r:=.r }} {{ $x:=.x }}
+<input id="webpath" type="hidden" value="http://{{.webpath}}">
 
-{{template "header"}}
-{{template "nav"}}
-    <div id="body">
-             <table>
-                 <input id="stockCode" placeholder="股票代码" value=""/>
-            </table>
+<script src="/public/js/echarts.common.min.js"></script>
+<script src="/public/js/ecStat.js"></script>
+<div id="body">
+    <input type="hidden" id="uid" value="{{.ua.UserId}}" />
+    <input type="hidden" id="nickName" value="{{.user.NickName}}" />
+    <div>
+
+        <!-- 为ECharts准备一个具备大小（宽高）的Dom -->
+        <div id="chart1" style="width: 300px;height:200px;"></div>
+        <div id="chart2" style="width: 300px;height:200px;"></div>
+        <script type="text/javascript">
+            // 基于准备好的dom，初始化echarts实例
+            var nickName = $("#nickName").val()
+            var echart1 = echarts.init(document.getElementById('chart1'));
+
+            echart1.showLoading({
+                text: '正在努力加载中...'
+            });
+
+            var values = [];
+            // 同步执行  
+            $.ajaxSettings.async = false;
+
+            // 加载数据  
+            var path = $("#webpath").val() + '/user/trxRate/' + $("#uid").val()
+            $.getJSON(path, function (json) {
+                if (json.code == "200") {
+                    values = json.data;
+                    echart1.hideLoading()
+                }
+            });
+            // 指定图表的配置项和数据
+            option = {
+                title: {
+                    text: nickName + '的交易情况',
+                    subtext: '',
+                    x: 'center'
+                },
+                tooltip: {
+                    trigger: 'item',
+                    formatter: "{a} <br/>{b} : {c} ({d}%)"
+                },
+                legend: {
+                    orient: 'vertical',
+                    left: 'left',
+                    data: ['盈利笔数', '亏损笔数']
+                },
+                series: [
+                    {
+                        name: nickName + '的交易情况',
+                        type: 'pie',
+                        radius: '55%',
+                        center: ['50%', '60%'],
+                        data: values,
+                        itemStyle: {
+                            emphasis: {
+                                shadowBlur: 10,
+                                shadowOffsetX: 0,
+                                shadowColor: 'rgba(0, 0, 0, 0.5)'
+                            }
+                        }
+                    }
+                ]
+            };
+            // 使用刚指定的配置项和数据显示图表。
+           echart1.setOption(option);
+           
+var echart2 = echarts.init(document.getElementById('chart2'));
+    $.getJSON($("#webpath").val() + '/user/rankDataChart/' + $("#uid").val(), function (json) {
+    
+        var data = json.data
+                
+        var myRegression = ecStat.regression('exponential', data);
+        myRegression.points.sort(function(a, b) {
+            return a[0] - b[0];
+        });
+
+        echart2.setOption({
+             title: {
+                text: nickName+'周排名变化',
+                left: 'center',
+                top: 21
+            },
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: {
+                    type: 'cross'
+                }
+            },
+            xAxis: {
+                type: 'value',
+                min: 10,
+                splitLine: {
+                    lineStyle: {
+                        type: 'dashed'
+                    }
+                },
+            },
+            yAxis: {
+                type: 'value',
+                min: 1,
+                splitLine: {
+                    lineStyle: {
+                        type: 'dashed'
+                    }
+                },
+            },
+            series: [{
+                name: '周',
+                type: 'scatter',
+                show:false,
+                label: {
+                    emphasis: {
+                        show: false
+                    }
+                },
+                data: data
+            }, {
+                name: '排名',
+                type: 'line',
+                showSymbol: false,
+                data: myRegression.points,
+                markPoint: {
+                    itemStyle: {
+                        normal: {
+                            color: 'transparent'
+                        }
+                    },
+                    label: {
+                        normal: {
+                            show: false,
+                            position: 'left',
+                            formatter: myRegression.expression,
+                            textStyle: {
+                                color: '#333',
+                                fontSize: 14
+                            }
+                        }
+                    },
+                    data: [{
+                        coord: myRegression.points[myRegression.points.length - 1]
+                    }]
+                }
+            }]
+        });
+    });
+</script>
+
     </div>
- {{template "tail"}}
+    <div>
+        <table>
+            <thead>
+                <tr>
+                    <td>股票代码</td>
+                    <td>当前持股</td>
+                    <td>可用持股</td>
+                    <td>持仓成本价</td>
+                    <td>最新价</td>
+                    <td>持股市值</td>
+                    <td>浮动盈亏</td>
+                    <td>盈亏比例</td>
+                </tr>
+            </thead>
+            {{range .stockHoldings }}
+            <tr>
+                <td>{{.StockCode}}</td>
+                <td>{{.StockNumber}}</td>
+                <td>{{.AvailableNumber}}</td>
+                <td>{{.TransPrice}}</td>
+                <td>{{ $cp := StockDetail $r .StockCode 3 }} {{$cp}}</td>
+                <td>{{ StockValue $r .StockCode .StockNumber}}</td>
+                <td>{{ StockValue $r .StockCode .StockNumber}}</td>
+                <td>{{ FloatEarning $cp .TransPrice .StockNumber }} </td>
+                <td>{{ EarningRate $cp .TransPrice }}</td>
+                <td>订阅</td>
+            </tr>
+            {{end}}
+        </table>
+    </div>
+</div>
+{{template "tail"}}

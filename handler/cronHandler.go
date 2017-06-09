@@ -198,10 +198,8 @@ func (job *MyJob) J_MixAndAvgHoldingStocks() {
 			job.Task.LastRunResult = 1
 			job.Task.LastRunMsg = err.Error()
 		}
-
 		//更新执行任务结果
-		log.Println("任务之行结束：%s", job.Task)
-		job.Engine.Update(job.Task)
+		log.Printf("任务之行结束：%s", job.Task)
 	}
 }
 
@@ -248,13 +246,12 @@ func (job *MyJob) J_CurrentStockDetail() {
 				//	启动协程，通过通道进行并行处理
 				stringList := ConcatStockList(temp)
 				ch := make(chan map[string]interface{})
-
 				//获取数据
 				go GetStock5StagesWithChan(ch, stringList)
 				//进行存储
 				go DumpStockDetail(job, ch)
 
-				time.Sleep(2e9)
+				time.Sleep(1e9)
 			}
 		}
 		job.Task.LastRunResult = 0
@@ -310,6 +307,7 @@ func DumpStockDetail(job *MyJob, ch chan map[string]interface{}) {
 		}
 	} else if job.Task.DumpType == 1 { //redis
 		v5 := <-ch
+
 		v5 = func(v5 map[string]interface{}) map[string]interface{} {
 			for k, v := range v5 {
 				v55 := make([]string, 0)
@@ -346,8 +344,8 @@ func (job *MyJob) J_DayEarningCalc() {
 
 	//0、获取所有持仓
 	earningSql := "update user_account ua LEFT JOIN " +
-		"(SELECT ors.user_id, sum(round(ors.stock_number * 100 * (cs.current_price - holdings_price), 2)) earning, " +
-		"sum(round(ors.stock_number * 100 * cs.current_price, 2))  value FROM (SELECT user_id, stock_code,  sum(stock_number) stock_number,  holdings_price   FROM stock_holding  WHERE holding_status = 1   GROUP BY user_id, stock_code, holdings_price) ors" +
+		"(SELECT ors.user_id, sum(round(ors.stock_number * (cs.current_price - trans_price), 2)) earning, " +
+		"sum(round(ors.stock_number * cs.current_price, 2))  value FROM (SELECT user_id, stock_code,  sum(stock_number) stock_number,trans_price FROM stock_holding  WHERE holding_status = 1  GROUP BY user_id, stock_code, trans_price) ors" +
 		"LEFT JOIN  current_stock_detail cs  ON ors.stock_code = cs.stock_code" +
 		"GROUP BY ors.user_id) v on ua.user_id = v.user_id " +
 		"set ua.earning_rate = (v.value+ua.available_amount) /ua.init_amount, " + //总收益率
@@ -733,8 +731,7 @@ func dumpNotifyLogs(s *xorm.Session, myFollowers []*model.UserFollow, followedUe
 	//根据数量进行切片.500一次
 	len := len(myFollowers)
 	if len > 0 {
-		in_batch_id := time.Now().Format(model.DATE_ORDER_FORMAT)
-		messageLogs := make([]*model.MessageLog, len)
+		inBatchId := time.Now().Format(model.DATE_ORDER_FORMAT)
 
 		//一次500个短信
 		step := len / 500
@@ -758,19 +755,26 @@ func dumpNotifyLogs(s *xorm.Session, myFollowers []*model.UserFollow, followedUe
 					}
 				}
 				messageLog := new(model.MessageLog)
+
 				messageLog.Mobile = u.Mobile
 				messageLog.SendStatus = 0
-				messageLog.InBatchId = in_batch_id
+				messageLog.InBatchId = inBatchId
 				msgKey := strconv.Itoa(int(follower.UserId)) + strconv.Itoa(int(trx.Id))
 				// "【金修网络】尊敬的用户:您在本平台中订阅的用户%s有了新交易动态，查看请点击链接 %s"
+
 				messageLog.Content = fmt.Sprintf(model.TRX_NOTIFY_MSG, u)
 				// 【金修网络】尊敬的用户:您在模拟股票交易中订阅的用户%s在%s买入%s，成交价格%s %s股。以上数据来自于模拟股票交易仅供参考
-				num := trx.TransNumber * 100
+				num := trx.TransNumber
+
 				messageLog.Detail = fmt.Sprintf(model.TRX_NOTIFY_DETAIL,
 					u.NickName, trx.TransTime.Format(model.DATE_TIME_FORMAT),
 					trx.StockCode, trx.TransPrice, strconv.Itoa(int(num)))
+
 				redis.Set(msgKey, messageLog.Detail, time.Hour*24*2) //设置消息redis
-				messageLogs = append(messageLogs, messageLog)
+
+				//消息进队列
+				PublishMessage(redis, model.R_MSG_SEND_CHAN, messageLog)
+				// messageLogs = append(messageLogs, messageLog)
 			}
 
 		}
@@ -781,8 +785,9 @@ func dumpNotifyLogs(s *xorm.Session, myFollowers []*model.UserFollow, followedUe
 /**
 发送短信任务
 15秒轮训一次
+禁用
 **/
-func (job *MyJob) J_SendMsg() {
+func (job *MyJob) J_SendMessage() {
 
 	batchs := make([]*model.MessageLog, 0)
 	s := job.Engine.NewSession()
@@ -790,11 +795,14 @@ func (job *MyJob) J_SendMsg() {
 	defer s.Close()
 	//根据批次号进行发送
 	if err := s.NoCache().Where("send_status=?", 0).Distinct("in_batch_id").GroupBy("in_batch_id").Find(&batchs); err == nil {
+		log.Printf("%s", batchs)
 		if len(batchs) > 0 {
 			for _, inBatchId := range batchs {
+				log.Printf("batchId:%s", inBatchId.InBatchId)
 				messages := make([]*model.MessageLog, 0)
-				s.Cols("id,mobile,content").Where("in_batch_id=?", inBatchId).And("send_status=?", 0).Find(&messages)
+				s.Where("in_batch_id=?", inBatchId.InBatchId).And("send_status=?", 0).Find(&messages)
 				if len(messages) > 0 {
+					log.Printf("短信%s", messages)
 					content := ""
 					mobiles := make([]string, len(messages))
 					for i, m := range messages {
@@ -806,13 +814,16 @@ func (job *MyJob) J_SendMsg() {
 					//join mobile
 					var err error
 					mobileList := strings.Join(mobiles, ",")
-					if flag, ret := sendMessage(mobileList, content); flag && strings.Contains(ret, "0:") {
+					fmt.Printf("短信列表%s", mobileList)
+
+					if flag, ret := sendMessage(mobileList, content); flag {
 						_, err = s.Exec("update message_log set send_status =?,ret_batch_id = ?,updated=now() "+
-							" where in_batch_id=?", 1, ret, inBatchId)
+							" where in_batch_id=?", 1, ret, inBatchId.InBatchId)
 					} else {
 						_, err = s.Exec("update message_log set send_status =?,err_msg =?,updated=now()"+
-							" where in_batch_id=?", 2, ret, inBatchId)
+							" where in_batch_id=?", 2, ret, inBatchId.InBatchId)
 					}
+
 					if err != nil {
 						log.Printf("短信发送失败%s", inBatchId)
 						s.Rollback()
@@ -828,10 +839,66 @@ func (job *MyJob) J_SendMsg() {
 }
 
 /*
-获取短信状态
+*定时撮合交易
+*撮合的时间段是有效交易的时间段
 **/
-func (job *MyJob) J_GetMsgStatus() {
+func (job *MyJob) J_TrxMatch() {
 
+	log.Printf("撮合交易开始%s\n", time.Now())
+	if !checkInService() {
+		return
+	}
+
+	//0、统计所有待交易的数据，
+	today := time.Now().Format(model.DATE_FORMAT_1)
+
+	se := new(model.StockEntrust)
+
+	if count, _ := job.Engine.Where("entrust_status=?", 1).And("entrust_time>?", today).Count(se); count > 0 {
+		log.Printf("存在委托数据...")
+		//0-1、数据分片，开启协程处理
+		page := int(count) / model.MATCH_LIMIT
+
+		if int(count)%model.MATCH_LIMIT != 0 {
+			page++
+		}
+		if page == 0 {
+			page++
+		}
+
+		for i := 0; i < page; i++ { //分片获取数据
+			//1、撮合第一步，获取所有买卖的委托
+			stockEntrusts := make([]*model.StockEntrust, 0)
+			err := job.Engine.Where("entrust_status=?", 1).And("entrust_time>?", today).
+				Limit(model.MATCH_LIMIT, i*model.MATCH_LIMIT).
+				Find(&stockEntrusts)
+			if err == nil {
+				//开启lambda协程
+				// go func() {
+
+				// }()
+				//拼接股票代码
+				stockList := ConcatStockList(stockEntrusts)
+				if f, mapp := GetStock5Stages(stockList); f {
+					for _, ent := range stockEntrusts {
+						v5 := mapp[ent.StockCode]
+						log.Printf("判断是否可以进行交易：%s", ent.StockCode)
+						if canTrx(ent, v5) { //判断是否可以进行交易
+							log.Printf("可以进行交易：%s", ent.StockCode)
+							doTrx(job.Engine.NewSession(), ent, v5) //进行交易
+						}
+					}
+				}
+
+			} else {
+				log.Printf("查询出错了%s", err.Error())
+			}
+		}
+
+		//2、买卖开启协程进行匹配当前价格
+	} else {
+		log.Printf("没有今日委托的数据...")
+	}
 }
 
 /**
@@ -870,8 +937,6 @@ func doMixHoldingStocks(x *xorm.Engine) (bool, error) {
 				//更新oldStock
 				oldStock.StockNumber = num
 				oldStock.TransPrice = avgP
-				// _, err := session.Update(oldStock)
-				// oldStocks[j] = oldStock
 				//追加
 				oldStocks = append(oldStocks, oldStock)
 			}

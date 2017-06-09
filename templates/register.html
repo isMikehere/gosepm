@@ -1,16 +1,70 @@
-<html>
-  {{template "header"}}
+{{template "header" .}}
+<script>
+  $(function () {
+    //phone获取验证码
+    $("#mobileCodeBtn").bind("click", function () {
+      if ($("#mobile").val() != "") {
+        $.post("/mobileCode/" + $("#mobile").val(), function (data) {
+          if (data.Code == "100") {
+            alert("短信发送失败，请重试")
+          } else {
+            alert("短信发送成功")
+          }
+        })
+      }else{
+        alert("请输入手机号")
+      }
+    });
+	$(".btn-register").bind("click",function(){
+       $("#registerForm").submit()
+		})
+  })
+</script>
+
 <body>
-<form id="registerForm" method="POST" action="register.htm"  >
-    <input id="user_name" name="user_name" placeholder="用户名"/>
-    <input id="password" name="pasword" placeholder="密码"/>
-    <input id="password_again" name="pasword_again" placeholder="密码"/>
-    <input id="mobile" name="mobile" placeholder="手机号"/>
-    {{.Captcha.CreateHtml}} 
-    <input id="captcha" name="captcha" placeholder="验证码"/>
-    <input id="phoneCode" name="phoneCode" type="button" value="获取验证码">
-    <input type="submit" value="注册"/>
-    <input type="button" value="重置"/>
-</form>
+  <div class="register-cont">
+    <div class="logo-box">
+      <img src="/public/img/logo.png" />
+      <p>国内最大的股票模拟平台</p>
+    </div>
+    <!--注册-->
+    <form id="registerForm" method="POST" action="register.htm">
+      <div class="register-box">
+        <h1 class="title">注册</h1>
+        <div class="input-box input-account">
+          <input type="text" placeholder="设置账户名" name="user_name" id="user_name" value="" />
+        </div>
+        <div class="input-box input-account">
+          <input type="text" placeholder="设置昵称" name="nick_name" id="nick_name" value="" />
+        </div>
+        <div class="input-box input-psw">
+          <input type="password" placeholder="登录密码由8~16位数字和字母组成" name="password" id="password" value="" />
+        </div>
+        <div class="input-box input-phone">
+          <input type="tel" placeholder="请输入手机号码" name="mobile" id="mobile" value="" />
+        </div>
+        <div class="input-code">
+          <input type="text" placeholder="请输入验证码" name="mobileCode" id="mobileCode" value="" />
+          <div class="btn-code">
+            <input id="mobileCodeBtn" type="button" value="获取验证码">
+          </div>
+          <!--<div class="btn-code btn-disable">
+						<input id="mobileCodeBtn"  type="button" value="获取验证码">
+					</div>-->
+        </div>
+           <p class="register-tip register-first-tip">{{.msg}}</p>
+        <div class="btn-register">
+             注册
+        </div>
+        <p class="register-tip register-first-tip">点击“立即注册”，即表示您同意并愿意遵守金修网络用户协议和隐私政策</p>
+        <p class="register-tip register-again-tip">如果您已拥有金修网络的ID，则可在此<a href="login.htm">登录</a></p>
+      </div>
+    </form>
+  </div>
+  <div class="register-footer">
+    <p>Copyright © 2017, Jinxiu Networkl Co., Ltd. All Rights Reserved.金修网络有限公司法律声明隐私条款</p>
+    <p>京ICP备14041720号-1京ICP证140622号京公网安备11010502025474</p>
+  </div>
 </body>
+
 </html>

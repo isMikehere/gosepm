@@ -2,8 +2,10 @@ package handler
 
 import (
 	"testing"
+	"time"
 
 	"../model"
+	redis "github.com/go-redis/redis"
 )
 
 func TestConcatStockList(t *testing.T) {
@@ -155,6 +157,177 @@ func TestShortMe(t *testing.T) {
 			}
 			if got1 != tt.want1 {
 				t.Errorf("ShortMe() got1 = %v, want %v", got1, tt.want1)
+			}
+		})
+	}
+}
+
+func TestMaskStockCode(t *testing.T) {
+	type args struct {
+		code string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		// TODO: Add test cases.
+		{name: "test", args: args{code: "123"}, want: "***"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := MaskStockCode(tt.args.code); got != tt.want {
+				t.Errorf("MaskStockCode() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestStockValue(t *testing.T) {
+
+	r := redis.NewClient(&redis.Options{
+		Addr:         "sepm:6379",
+		DialTimeout:  10 * time.Second,
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 30 * time.Second,
+		PoolSize:     10,
+		PoolTimeout:  30 * time.Second,
+		Password:     "xceof",
+	})
+
+	type args struct {
+		r         *redis.Client
+		num       int32
+		stockCode string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		// TODO: Add test cases.
+		{name: "test", args: args{r: r, num: 10, stockCode: "000001"}, want: "9170.00"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := StockValue(tt.args.r, tt.args.stockCode, tt.args.num); got != tt.want {
+				t.Errorf("StockValue() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestStockDetail(t *testing.T) {
+
+	r := redis.NewClient(&redis.Options{
+		Addr:         "sepm:6379",
+		DialTimeout:  10 * time.Second,
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 30 * time.Second,
+		PoolSize:     10,
+		PoolTimeout:  30 * time.Second,
+		Password:     "xceof",
+	})
+
+	type args struct {
+		r         *redis.Client
+		stockCode string
+		index     int
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		// TODO: Add test cases.
+		{name: "test", args: args{r: r, stockCode: "000001", index: 31}, want: "9.180"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := StockDetail(tt.args.r, tt.args.stockCode, tt.args.index); got != tt.want {
+				t.Errorf("StockDetail() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestFloatEarning(t *testing.T) {
+	type args struct {
+		cp         interface{}
+		transPrice interface{}
+		num        int32
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		// TODO: Add test cases.
+		{name: "test", args: args{cp: 10.01, transPrice: "10.02", num: 1}, want: "-1.00"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := FloatEarning(tt.args.cp, tt.args.transPrice, tt.args.num); got != tt.want {
+				t.Errorf("FloatEarning() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestRandomCode(t *testing.T) {
+	tests := []struct {
+		name string
+		want string
+	}{
+		// TODO: Add test cases.
+		{name: "test", want: "0000"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := RandomIntCode(); got != tt.want {
+				t.Errorf("RandomCode() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestRandomStringCode(t *testing.T) {
+	type args struct {
+		len int
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		// TODO: Add test cases.
+		{name: "test", args: args{len: 16}, want: ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := RandomStringCode(tt.args.len); got != tt.want {
+				t.Errorf("RandomStringCode() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestMd5(t *testing.T) {
+	type args struct {
+		text string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		// TODO: Add test cases.
+		{name: "test", args: args{text: "1"}, want: "c4ca4238a0b923820dcc509a6f75849b"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Md5(tt.args.text); got != tt.want {
+				t.Errorf("Md5() = %v, want %v", got, tt.want)
 			}
 		})
 	}

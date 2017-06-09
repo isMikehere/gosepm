@@ -1,5 +1,32 @@
 {{template "header" .}}
 {{template "nav" .}}
+<script>
+
+  $(function(){
+  //商品选择
+  $("#productType").bind("change",function(type){
+       var url=$("#webpath").val()+"/product/"+$("#productType :selected").val()
+        $.get(url,function(data){
+            if (data.code == "200"){
+                $("#price").html(data.data.Price)
+            }else{
+              $("#price").html("--")
+            }
+        })
+  });
+
+  //提交订单 
+$("#buy").bind("click",function(){
+    if ($("#productType").val() != -1){
+        var url=$("#webpath").val()+"/user/follow/{{.i.Id}}/"+$("#productType").val()+"/"+$("#orderToken").val()
+        window.location.href=url
+    }
+  })})
+
+</script>
+<input id="webpath" type="hidden" value="http://{{.webpath}}">
+<input id="orderToken" type="hidden" value="{{.orderToken}}">
+    
     <div id="body">
         <div class="step"></div>
         <div class="products">
@@ -14,11 +41,10 @@
                     </tr>
                 </thead>
                 <tbody>
-
      <tr>
         <td>{{.user2Follow.NickName}} <td>
         <td>
-            <select  id="productType" >
+            <select id="productType" >
                  <option value="-1">选择类型</option>
                 {{ range .products}}
                 <option value="{{.Types}}">{{.Name}}</option>
@@ -31,8 +57,6 @@
         <td>
             <input id="buy" type="button" value="确认下单">
             
-            <td>
-                
                 </tr>
             </tbody>
             </table>

@@ -19,6 +19,7 @@ import (
 
 	"strconv"
 
+	redis "github.com/go-redis/redis"
 	"github.com/go-xorm/xorm"
 	"github.com/stephenlyu/wxpay"
 	macaron "gopkg.in/macaron.v1"
@@ -355,49 +356,97 @@ func WxNotifyHandler(ctx *macaron.Context, x *xorm.Engine, log *log.Logger) (int
 }
 
 //测试支付路由
-func TestPayHandler(ctx *macaron.Context, x *xorm.Engine) {
+func TestPayHandler(ctx *macaron.Context, x *xorm.Engine, r *redis.Client) {
 
 	orderId, _ := strconv.Atoi(ctx.Params(":orderId"))
+	payType := ctx.Params(":payType")
+	_, msg := OrderPayed(x, r, orderId, payType)
+	log.Printf("%s", msg)
+	ctx.Data["msg"] = msg
+	ctx.HTML(200, "follow_step3")
+}
+
+/**
+订单处理*
+**/
+func OrderPayed(x *xorm.Engine, r *redis.Client, orderId int, payType string) (bool, string) {
+
 	order := new(model.StockOrder)
-	msg := "恭喜你支付成功"
 	if has, _ := x.Id(orderId).Get(order); has {
 		//判断是否已经支付
 		if order.OrderStatus != 0 {
-			msg = "订单状态异常，请检查订单"
-		} else {
-
-			s := x.NewSession()
-			s.Begin()
-			defer s.Close()
-			order.OrderStatus = 1
-
-			now := time.Now()
-			uf := new(model.UserFollow)
-			uf.UserId = order.UserId
-			uf.FollowedId = order.FollowedId
-			uf.FollowType = order.ProductType
-			uf.FollowStart = now
-			uf.OrderId = order.Id
-			uf.FollowEnd = now.Add(7 * 24 * time.Hour)
-			uf.FollowStatus = 0
-			_, err := s.Id(orderId).Update(order)
-			if err != nil {
-				s.Rollback()
-				msg = "订单更新失败,请联系客服"
-			}
-			_, err = s.Insert(uf)
-			if err != nil {
-				s.Rollback()
-				msg = "订单更新失败,请联系客服"
-			} else {
-				s.Commit()
-				//成功后提醒
-				go NotifyAllAfterPay(x, order.Id)
-			}
+			return false, "订单状态异常，请检查订单"
 		}
 	} else {
-		msg = "订单不存在"
+		return false, "订单不存在"
 	}
-	ctx.Data["msg"] = msg
-	ctx.HTML(200, "follow_step3")
+
+	now := time.Now()
+	s := x.NewSession()
+	s.Begin()
+	defer s.Close()
+
+	order.OrderStatus = 1
+	order.PayType = payType
+	order.PayTime = now
+
+	uf := new(model.UserFollow)
+	uf.UserId = order.UserId
+	uf.FollowedId = order.FollowedId
+	uf.FollowType = order.ProductType
+	uf.FollowStart = now
+	uf.OrderId = order.Id
+	var weeks = 1
+	uf.FollowEnd = now.Add(1 * 7 * 24 * time.Hour)
+	if order.ProductType == 1 {
+		weeks = 4
+		uf.FollowEnd = now.Add(4 * 7 * 24 * time.Hour)
+	}
+	uf.FollowStatus = 0
+	//开始更新
+	_, err := s.Id(orderId).Update(order)
+	if err != nil {
+		log.Printf("出现异常%s", err.Error())
+		s.Rollback()
+		return false, "订单更新失败,请联系客服"
+	}
+
+	user := new(model.User)         //订阅人
+	followedUser := new(model.User) //被订阅人
+	x.Id(order.UserId).Get(user)
+	x.Id(order.UserId).Get(followedUser)
+
+	//更新用户的订阅量
+	userAccount := new(model.UserAccount)
+	if has, _ := s.Where("user_id=?", followedUser.Id).Get(userAccount); has {
+		userAccount.TotalFollow = userAccount.TotalFollow + 1
+		_, err = s.Id(userAccount.Id).MustCols("total_follow").Update(userAccount)
+		if err != nil {
+			log.Printf("出现异常%s", err.Error())
+			s.Rollback()
+			return false, "订单更新失败,请联系客服"
+		}
+	} else {
+		s.Rollback()
+	}
+
+	// 【金修网络】恭喜您：%s已经成功订阅您的为期%d周股票模拟交易提醒，有效期为%s-%s。请及时处理详情请参考订单须知。
+	messageLog := new(model.MessageLog)
+	messageLog.Mobile = followedUser.Mobile
+	messageLog.InBatchId = time.Now().Format(model.DATE_ORDER_FORMAT)
+	messageLog.Content =
+		fmt.Sprintf(model.TOBEFOLLOWED_OK_MSG, user.NickName, weeks, uf.FollowStart.Format(model.DATE_TIME_FORMAT),
+			uf.FollowEnd.Format(model.DATE_TIME_FORMAT))
+	messageLog.SendStatus = 0
+	//发布消息队列
+	PublishMessage(r, model.R_MSG_SEND_CHAN, messageLog)
+
+	_, err = s.Insert(uf)
+	if err != nil {
+		log.Printf("出现异常%s", err.Error())
+		s.Rollback()
+		return false, "订单更新失败,请联系客服"
+	}
+	s.Commit()
+	return true, "订单更新成功"
 }
