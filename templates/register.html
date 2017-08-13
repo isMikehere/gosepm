@@ -5,6 +5,7 @@
     $("#mobileCodeBtn").bind("click", function () {
       if ($("#mobile").val() != "") {
         $.post("/mobileCode/" + $("#mobile").val(), function (data) {
+          console.log(data);
           if (data.Code == "100") {
             alert("短信发送失败，请重试")
           } else {
@@ -48,9 +49,6 @@
           <div class="btn-code">
             <input id="mobileCodeBtn" type="button" value="获取验证码">
           </div>
-          <!--<div class="btn-code btn-disable">
-						<input id="mobileCodeBtn"  type="button" value="获取验证码">
-					</div>-->
         </div>
            <p class="register-tip register-first-tip">{{.msg}}</p>
         <div class="btn-register">

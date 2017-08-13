@@ -54,8 +54,8 @@ func LoginPostHandler(user model.User, sess session.Store, ctx *macaron.Context,
 		u.LastLoginDate = time.Now()
 		sess.Set("user", u)
 		x.Update(u)
-		ctx.Redirect("/index.htm")
-		//IndexHandler(sess, ctx, x, r)
+		// ctx.Redirect("/index.htm")
+		IndexHandler(sess, ctx, x, r)
 	} else {
 		log.Println("用户名密码不正确")
 		ctx.Data["msg"] = "用户名密码不正确"
@@ -66,7 +66,7 @@ func LoginPostHandler(user model.User, sess session.Store, ctx *macaron.Context,
 //注销
 func LogoutHandler(sess session.Store, ctx *macaron.Context, x *xorm.Engine) {
 
-	if sess.Get("user") != nil {
+if sess.Get("user") != nil {
 		user := sess.Get("user").(*model.User)
 		log.Printf("用户%s注销", user.UserName)
 		sess.Delete("user")
@@ -86,6 +86,7 @@ func GetMobileCode(ctx *macaron.Context, x *xorm.Engine, r *redis.Client) {
 	mobile := ctx.Params(":mobile")
 	if mobile != "" && checkSend(mobile) {
 		code := RandomIntCode()
+		fmt.Printf("生成的短信验证码：%s", code)
 		r.Set(mobile, code, model.MSG_EXPIRE_DURATION) //expire
 		expired := time.Now().Add(model.MSG_EXPIRE_DURATION)
 		f, _ := sendMessage(mobile, fmt.Sprintf(model.REGISTER_MSG, code))
@@ -118,7 +119,7 @@ func RegisterPostHandler(user model.User, sess session.Store, ctx *macaron.Conte
 
 	//检验
 	mobileCode := ctx.Query("mobileCode")
-	fmt.Printf("mobileCode:%s", mobileCode)
+	fmt.Printf("手机验证码:mobileCode:%s", mobileCode)
 	if ok := checkMobileCode(redis, user.Mobile, mobileCode); !ok {
 		ctx.Data["msg"] = "验证码有误"
 		ctx.HTML(200, "register")

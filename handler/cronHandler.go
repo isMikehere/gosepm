@@ -391,6 +391,8 @@ func (job *MyJob) J_DailyRankCalc() {
 		"LIMIT  ?) t,(SELECT @i:=0) AS it"
 
 	err := session.Desc("earning", "earning_rate").Limit(model.RANK_SIZE, 0).Find(&userAccounts)
+	log.Printf("%s", earningSql)
+
 	if err == nil {
 		i := 0
 		for _, userAccount := range userAccounts {

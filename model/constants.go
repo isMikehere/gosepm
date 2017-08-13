@@ -134,8 +134,8 @@ const (
 //短信API
 const (
 	MSG_SEND_API   = "http://www.6610086.net/jk.aspx"
-	MSG_LEFT_API   = "http://www./www.6610086.net/jkyy"
-	MSG_STATUS_API = "http://www./www.6610086.net/jk_new_report.aspx"
+	MSG_LEFT_API   = "http://www.6610086.net/jkyy"
+	MSG_STATUS_API = "http://www.6610086.net/jk_new_report.aspx"
 	MSG_BIZ_CHAN   = "45"        // 商业渠道
 	MSG_SALE_CHAN  = "52"        // 营销渠道
 	MSG_ACCOUNT    = "tangguowu" // account

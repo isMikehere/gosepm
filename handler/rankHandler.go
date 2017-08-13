@@ -2,6 +2,7 @@
 package handler
 
 import (
+	"fmt"
 	"time"
 
 	macaron "gopkg.in/macaron.v1"
@@ -135,7 +136,7 @@ func RankListHandler(ctx *macaron.Context, x *xorm.Engine, redisCli *redis.Clien
 		}
 
 	}
-	mapp, data := listTestRankData(x, page)
+	paginator, data := listTestRankData(x, page)
 	//周冠军次数
 	data = func(d []*model.RankData) []*model.RankData {
 		for _, rank := range d {
@@ -144,7 +145,7 @@ func RankListHandler(ctx *macaron.Context, x *xorm.Engine, redisCli *redis.Clien
 		return d
 	}(data)
 	ctx.Data["ranks"] = data
-	ctx.Data["mapp"] = mapp
+	ctx.Data["paginator"] = paginator
 	ctx.HTML(200, "rank")
 }
 
@@ -162,9 +163,10 @@ func listTestRankData(x *xorm.Engine, page int) (map[string]interface{}, []*mode
 		" left join user u on ua.user_id = u.id " +
 		" left join week_rank wr on wr.user_id = ua.user_id" +
 		" left join month_rank mr on mr.user_id = ua.user_id "
-	if _, err := x.Sql(countSQL).Get(c); err != nil && c.Count > 0 {
-		mapp := Paginator(page, c.Count)
-		sql := "select ua.user_id,u.nick_name,ua.earning_rate," +
+
+	if _, err := x.Sql(countSQL).Get(c); err == nil {
+		paginator := Paginator(page, c.Count)
+		sql := "select ua.rank,ua.user_id,u.nick_name,ua.earning_rate," +
 			" wr.earning_rate week_rate,mr.earning_rate month_rate," +
 			" ua.total_follow from user_account ua  " +
 			" left join user u on ua.user_id = u.id " +
@@ -173,9 +175,11 @@ func listTestRankData(x *xorm.Engine, page int) (map[string]interface{}, []*mode
 			" order by ua.earning desc limit ?,?"
 
 		ranks := make([]*model.RankData, 0)
-		start := mapp["startIndex"]
+		start := paginator["startIndex"]
 		x.Sql(sql, start, model.PAGE_SIZE).Find(&ranks)
-		return mapp, ranks
+		return paginator, ranks
+	} else {
+		fmt.Errorf("查询排名列表异常：%s", err.Error())
 	}
 	return nil, nil
 }

@@ -25,6 +25,6 @@ func TestPage(ctx *macaron.Context, x *xorm.Engine) {
 	stocks := make([]*model.Stock, 0)
 	x.Where("1=1").Limit(model.PAGE_SIZE, mappp["startIndex"].(int)).Find(&stocks)
 	ctx.Data["paginator"] = mappp
-	// ctx.HTML(200, "pageable")
-	ctx.JSON(200, stocks)
+	ctx.HTML(200, "pageable")
+	// ctx.JSON(200, stocks)
 }

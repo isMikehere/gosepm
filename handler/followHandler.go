@@ -19,7 +19,7 @@ import (
 func FollowStep1Handler(sess session.Store, ctx *macaron.Context, x *xorm.Engine, log *log.Logger) {
 	//获取要订阅的人的ID
 	userId := ctx.Params(":id")
-	fmt.Print("-----userId," + userId)
+	fmt.Printf("-----userId:%s", userId)
 	u := new(model.User)
 	if has, _ := x.Id(userId).Get(u); has {
 		//获取有效的上线产品

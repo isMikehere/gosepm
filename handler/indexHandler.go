@@ -23,22 +23,24 @@ func IndexHandler(sess session.Store, ctx *macaron.Context, engine *xorm.Engine,
 	fmt.Printf("%s", dailyRanks)
 	ctx.Data["dailyRanks"] = dailyRanks
 	ctx.Data["d_syncAt"] = d_syncAt
-	// //周排名
+	// 周排名
 	w_syncAt, weekRanks := GetWeekRanks(engine)
 	ctx.Data["weekRanks"] = weekRanks
 	ctx.Data["w_syncAt"] = w_syncAt
 	//月排名
 	m_syncAt, monthRanks := GetMonthRanks(engine)
-	ctx.Data["monthRanks"] = monthRanks
+	ctx.Data["mountRanks"] = monthRanks
 	ctx.Data["m_syncAt"] = m_syncAt
-
-	// //新闻动态
+	//新闻动态
 	news := IndexNews(engine)
 	ctx.Data["news"] = news
 
+	login := false
 	if sess.Get("user") != nil {
 		ctx.Data["user"] = sess.Get("user")
+		login = true
 	}
+	ctx.Data["login"] = login
 
 	ctx.HTML(200, "index")
 }

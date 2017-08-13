@@ -47,6 +47,7 @@ func ConfigEngine(x *xorm.Engine) {
 	x.Logger().SetLevel(core.LOG_INFO)
 }
 
+//  数据库表同步
 func SyncTable(tableNames ...interface{}) {
 
 	fmt.Printf("开始同步表 \n")
@@ -62,6 +63,7 @@ func SyncTable(tableNames ...interface{}) {
 	fmt.Printf("开始同步表结束\n")
 }
 
+//数据库引擎初始化
 func initXormEngin() {
 	// //映射数据库服务
 	eg, err := db.ConnectDb(model.DriverOfMysql, model.DataSourceOfMysql)
@@ -251,13 +253,22 @@ func webgo() {
 		ctx.Data["r"] = r
 
 		url := ctx.Req.RequestURI
-		if strings.Contains(url, "/login") || strings.Contains(url, "/register.htm") || strings.Contains(url, "index.htm") || strings.Contains(url, ".js") || strings.Contains(url, ".css") {
+		if strings.Contains(url, "/login") ||
+			strings.Contains(url, "/register.htm") ||
+			strings.Contains(url, "/mobileCode/") ||
+			strings.Contains(url, "index.htm") ||
+			strings.Contains(url, ".js") ||
+			strings.Contains(url, ".css") {
 			ctx.Next()
+
 		} else {
 			u := sess.Get("user")
+			x.Id(1).Find(&u)
+
 			if u == nil {
 				ctx.Redirect("/login.htm")
 			} else {
+				ctx.Data["login"] = true
 				ctx.Next()
 				ctx.Data["user"] = u
 			}
@@ -385,7 +396,7 @@ func main() {
 	initXormEngin()
 	//数据库同步
 
-	SyncTable(new(model.User))
+	SyncTable(new(model.VerifyCode))
 	initRedisClient()
 	//·
 	var numCores = flag.Int("n", 2, "number of CPU cores to use")
@@ -394,6 +405,6 @@ func main() {
 	// initCache()
 	//开启定时任务
 	// go handler.StartSchedule(handler.InitScheduleJobs(engine, redisCli))
-	go handler.SubscribeMsgChan(engine, redisCli2)
+	// go handler.SubscribeMsgChan(engine, redisCli2)
 	webgo()
 }
