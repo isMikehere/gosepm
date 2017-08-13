@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>jQuery autocompleter</title>
+    <script type="text/javascript" src="/public/js/jquery.js"></script>
+    <link rel="stylesheet" type="text/css" href="/public/css/jquery.autocomplete.css">
+   
+    <link rel="stylesheet" type="text/css" href="/public/css/example.css">
+    <script type="text/javascript" src="/public/js/bloodhound.min.js"></script>
+    <script type="text/javascript" src="/public/js/typeahead.bundle.min.js"></script>
+    <script type="text/javascript" src="/public/js/typeahead.jquery.min.js"></script>
+    <script type="text/javascript">
+       
+       $(function () {
+            var stocks = new Bloodhound({
+                datumTokenizer: Bloodhound.tokenizers.whitespace,
+                queryTokenizer: Bloodhound.tokenizers.whitespace,
+                prefetch: '/searchStock.htm'
+            });
+
+            // passing in `null` for the `options` arguments will result in the default
+            // options being used
+            $('#prefetch .typeahead').typeahead(null, {
+                name: 'stocks',
+                source: stocks
+            });        
+})
+    </script>
+</head>
+
+<body>
+    <div id="prefetch">
+        <input class="typeahead" type="text" placeholder="股票代码">
+    </div>
+
+</body>
+
+</html>

@@ -1,0 +1,31 @@
+{{template "header" .}} {{template "nav" .}} {{ $r:=.r }} {{ $x:=.x }}
+<input id="webpath" type="hidden" value="http://{{.webpath}}">
+
+<script src="/public/js/echarts.common.min.js"></script>
+<script src="/public/js/ecStat.js"></script>
+<div id="body">
+    <div>
+        <table>
+            <thead>
+                <tr>
+                    <td>股票代码</td>
+                    <td>交易类型</td>
+                    <td>交易数量</td>
+                    <td>交易价格</td>
+                    <td>交易时间</td>
+                </tr>
+            </thead>
+            {{range .trxs }}
+            <tr>
+                <td>{{.StockCode}}</td>
+                <td> {{if eq .TransType 0}} 卖出 {{else}} 买进 {{end}}
+                </td>
+                <td>{{if eq .TransType 0}}-{{else}}+{{end}}{{ .TransNumber}}</td>
+                <td>{{.TransPrice}}</td>
+                <td>{{ FormatDateTime .TransTime}}</td>
+            </tr>
+            {{end}}
+        </table>
+    </div>
+</div>
+{{template "tail"}}

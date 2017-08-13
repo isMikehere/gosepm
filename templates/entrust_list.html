@@ -1,0 +1,29 @@
+{{template "header" .}}
+{{template "nav" .}}
+{{ $r:=.r }}
+{{ $x:=.x }}
+    <div id="body">
+               <table>
+            <thead>
+                <tr>
+                    <td>股票代码</td>
+                    <td>委托类型</td>
+                      <td>委托状态</td>
+                    <td>委托数量</td>
+                    <td>委托价格</td>
+                    <td>委托时间</td>
+                </tr>
+            </thead>
+            {{range .entrusts }}
+            <tr>
+                <td>{{.StockCode}}</td>
+                <td> {{if eq .TransType 0}} 卖出 {{else}} 买进 {{end}}</td>
+                <td> {{if eq .EntrustStatus 0}} 已交易 {{else if .EntrustStatus 1 }} 委托中  {{else if .EntrustStatus 2 }} 已经取消  {{else if .EntrustStatus 3 }} 没有交易 {{end}}</td>
+                <td>{{if eq .TransType 0}}-{{else}}+{{end}}{{.EntrustNumber}}</td>
+                <td>{{.EntrustPrice}}</td>
+                <td>{{ FormatDateTime .EntrustTime}}</td>
+            </tr>
+            {{end}}
+        </table>
+    </div>
+ {{template "tail"}}

@@ -1,0 +1,8 @@
+<div class="am-cf">  
+共{{.paginator.totals}}条记录 共记{{.paginator.totalpages}} 页 当前页 {{.paginator.currpage}} 
+<a href="{{.paginator.firstpage}}">«</a>
+{{range $index,$page := .paginator.pages}}  
+  <a {{if eq $.paginator.currpage $page }} class="am-active"{{end}} href="{{$page}}">{{$page}}</a>
+{{end}}
+ <a href="{{.paginator.lastpage}}">»</a>
+</div>  
