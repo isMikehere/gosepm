@@ -9,7 +9,8 @@ import "time"
 type StockEarning struct {
 	Id          int64
 	UserId      int64
-	StockCode   string  `xorm:"varchar(10)"`
+	Day         string  `xorm:"varchar(20)"`   //2017-01-01
+	StockCode   string  `xorm:"varchar(10)"`   //
 	EarningRate float64 `xorm:"decimal(32,2)"` //加权后 收益率
 	StockAmount float64 `xorm:"decimal(32,2)"` //股票市值
 	StockNumber int32   `xorm:"int(11)"`       //股票数量（单位：手）

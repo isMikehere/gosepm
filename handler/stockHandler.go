@@ -400,6 +400,7 @@ func doTrx(s *xorm.Session, ent *model.StockEntrust, v5 []string) {
 		s.Where("user_id = ?", ent.UserId).And("stock_code=?", ent.StockCode).
 			And("trans_status=?", 0).Desc("id").Find(&trxInfos)
 		//匹配交易对
+		// TODO:卖出交易结束后，则计算此股票的收益率，如果是最大则写入userAccount.Xcode保存:w
 
 		func() {
 

@@ -44,7 +44,7 @@ func Md5(text string) string {
 /*
  格式化比例
 */
-func FormateRate(rate float64) string {
+func FormatRate(rate float64) string {
 	return fmt.Sprintf("%s%s", decimal.NewFromFloat(rate).Mul(decimal.New(100, 0)).StringFixed(2), "%")
 }
 
@@ -599,7 +599,7 @@ func EarningRate(cp interface{}, transPrice interface{}) string {
 		return model.NA
 	}
 	f, _ := x.Sub(y).DivRound(y, 2).Float64()
-	rate = FormateRate(f)
+	rate = FormatRate(f)
 	return rate
 }
 

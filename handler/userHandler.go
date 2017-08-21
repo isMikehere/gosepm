@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"log"
+	"reflect"
 	"time"
 
 	"../model"
@@ -66,7 +67,7 @@ func LoginPostHandler(user model.User, sess session.Store, ctx *macaron.Context,
 //注销
 func LogoutHandler(sess session.Store, ctx *macaron.Context, x *xorm.Engine) {
 
-if sess.Get("user") != nil {
+	if sess.Get("user") != nil {
 		user := sess.Get("user").(*model.User)
 		log.Printf("用户%s注销", user.UserName)
 		sess.Delete("user")
@@ -211,17 +212,51 @@ func UserDetailHandler(sess session.Store, ctx *macaron.Context, x *xorm.Engine,
 	}
 }
 
-//跳转我的账户
+//跳转我的
 func UserAccountHandler(sess session.Store, ctx *macaron.Context, x *xorm.Engine, log *log.Logger, cpt *captcha.Captcha) {
 
 	//1、根据用户ID获取用户信息
 	//2、判断查询用户是否是本人
+	log.Printf("get user account %s")
+	id := 0
+	user := new(model.User)
+	if id, _ = strconv.Atoi(ctx.Params(":id")); id > 0 {
+		ctx.Data["self"] = false
+		if has, _ := x.Id(id).Get(&user); !has { //get the user again
+			ctx.HTML(200, "notfound")
+			return
+		}
+	} else {
+		ctx.Data["self"] = true
+		loginUser := sess.Get("user")
+		v := reflect.ValueOf(loginUser)
+		user = v.Interface().(*model.User)
+	}
+	ctx.Data["user"] = user
 
-	if id, _ := strconv.Atoi(ctx.Params(":id")); id > 0 {
-		user := new(model.User)
-		x.Id(id).Get(user)
-		ctx.Data["user"] = user
+	userAccount := new(model.UserAccount)
+	//get useraccount
+	if err := x.Where("user_id=?", user.Id).Find(&userAccount); err != nil { //ua
+		ctx.Data["userAccount"] = userAccount
+		// get the ranking data
+		weekRank := new(model.WeekRank)
+		if has, _ := x.Where("user_id=?", id).Desc("id").Limit(1, 0).Get(&weekRank); has {
+			ctx.Data["weekRank"] = weekRank
+		} else {
+			weekRank.Rank = userAccount.Rank
+			weekRank.EarningRate = userAccount.EarningRate
+		}
+		//get the month rank
+		monthRank := new(model.MonthRank)
+		if has, _ := x.Where("user_id=?", id).Desc("id").Limit(1, 0).Get(&monthRank); has {
+			ctx.Data["monthRank"] = monthRank
+		} else {
+			monthRank.Rank = userAccount.Rank
+			monthRank.EarningRate = userAccount.EarningRate
+		}
 		ctx.HTML(200, "user_account")
+	} else {
+		ctx.HTML(200, "notfound")
 	}
 }
 

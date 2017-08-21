@@ -72,11 +72,11 @@ func TestFormateRate(t *testing.T) {
 		want string
 	}{
 		// TODO: Add test cases.
-		{name: "test1", args: args{rate: 0.245}, want: "24.5%"},
+		{name: "test1", args: args{rate: 0.245}, want: "24.50%"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := FormateRate(tt.args.rate); got != tt.want {
+			if got := FormatRate(tt.args.rate); got != tt.want {
 				t.Logf("%s", got)
 				t.Errorf("FormateRate() = %v, want %v", got, tt.want)
 			}
@@ -328,6 +328,26 @@ func TestMd5(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := Md5(tt.args.text); got != tt.want {
 				t.Errorf("Md5() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestFormatRate(t *testing.T) {
+	type args struct {
+		rate float64
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+	// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := FormatRate(tt.args.rate); got != tt.want {
+				t.Errorf("FormatRate() = %v, want %v", got, tt.want)
 			}
 		})
 	}

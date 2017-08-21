@@ -1,177 +1,236 @@
+body,
+ol,
+ul,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+th,
+td,
+dl,
+dd,
+form,
+fieldset,
+legend,
+input,
+textarea,
+select {
+  margin: 0;
+  padding: 0;
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, Helvetica Neue, Helvetica, Roboto, Arial, PingFang SC, Hiragino Sans GB, Microsoft Yahei, Microsoft Jhenghei, sans-serif;
+  background: #fff;
+  -webkit-text-size-adjust: 100%;
+}
+a {
+  color: #2d374b;
+  text-decoration: none;
+}
+a:hover {
+  color: #cd0200;
+  text-decoration: underline;
+}
+em {
+  font-style: normal;
+}
+li {
+  list-style: none;
+}
+img {
+  border: 0;
+  vertical-align: middle;
+}
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+p {
+  word-wrap: break-word;
+}
+body {
+  max-width: 1440px;
+  min-width: 900px;
+  margin: auto;
+}
 .register-cont {
   position: relative;
-  height: 839px;
+  height: 41.95rem;
   margin: auto;
   background: url(../img/bg.png);
+  background-size: 100%;
 }
 .register-box {
-  width: 440px;
+  width: 22rem;
   position: absolute;
-  top: 60px;
-  right: 110px;
+  top: 3rem;
+  right: 5.5rem;
   background: #FFFFFF;
-  box-shadow: 2px 4px 10px 0 rgba(0, 0, 0, 0.5);
-  border-radius: 8px;
+  box-shadow: 0.1rem 0.2rem 0.5rem 0 rgba(0, 0, 0, 0.5);
+  border-radius: 0.4rem;
 }
 .title {
-  font-size: 28px;
+  font-size: 1.4rem;
   color: #333333;
   letter-spacing: 0;
   text-align: center;
-  padding: 30px 0;
+  padding: 1.5rem 0;
 }
 .input-box {
   position: relative;
-  width: 350px;
+  width: 17.5rem;
   margin: auto;
-  margin-bottom: 30px;
+  margin-bottom: 1.5rem;
 }
 .input-box .plh {
-  font-size: 18px;
+  font-size: 0.9rem;
   color: #BBBBBB;
   letter-spacing: 0;
-  text-indent: 60px;
+  text-indent: 3rem;
 }
 .input-box input::-webkit-input-placeholder,
 .input-box textarea::-webkit-input-placeholder {
-  font-size: 18px;
+  font-size: 0.9rem;
   color: #BBBBBB;
   letter-spacing: 0;
-  text-indent: 60px;
+  text-indent: 3rem;
 }
 .input-box input:-moz-placeholder,
 .input-box textarea:-moz-placeholder {
-  font-size: 18px;
+  font-size: 0.9rem;
   color: #BBBBBB;
   letter-spacing: 0;
-  text-indent: 60px;
+  text-indent: 3rem;
 }
 .input-box input::-moz-placeholder,
 .input-box textarea::-moz-placeholder {
-  font-size: 18px;
+  font-size: 0.9rem;
   color: #BBBBBB;
   letter-spacing: 0;
-  text-indent: 60px;
+  text-indent: 3rem;
 }
 .input-box input:-ms-input-placeholder,
 .input-box textarea:-ms-input-placeholder {
-  font-size: 18px;
+  font-size: 0.9rem;
   color: #BBBBBB;
   letter-spacing: 0;
-  text-indent: 60px;
+  text-indent: 3rem;
 }
 .input-box input {
   display: inline-block;
   width: 100%;
-  height: 60px;
-  line-height: 60px;
+  height: 3rem;
+  line-height: 3rem;
   background: #FFFFFF;
-  border: 1px solid #CCCCCC;
-  box-shadow: inset 0 1px 3px 0 rgba(0, 0, 0, 0.5);
-  border-radius: 4px;
-  text-indent: 60px;
-  font-size: 18px;
+  border: 0.05rem solid #CCCCCC;
+  box-shadow: inset 0 0.05rem 0.15rem 0 rgba(0, 0, 0, 0.5);
+  border-radius: 0.2rem;
+  text-indent: 3rem;
+  font-size: 0.9rem;
 }
 .input-box:before {
   content: '';
   position: absolute;
-  left: 10px;
-  top: 14px;
-  width: 35px;
-  height: 35px;
+  left: 0.5rem;
+  top: 0.7rem;
+  width: 1.75rem;
+  height: 1.75rem;
   background-size: 100%;
   background-repeat: no-repeat;
   background-position: center;
 }
 .input-account:before {
   background-image: url(../img/account.png);
-  background-size: 29px;
+  background-size: 1.45rem;
 }
 .input-mail:before {
   background-image: url(../img/mail.png);
-  background-size: 27px;
+  background-size: 1.35rem;
 }
 .input-psw:before {
   background-image: url(../img/psw.png);
-  background-size: 27px;
+  background-size: 1.35rem;
 }
 .input-phone:before {
   background-image: url(../img/phone.png);
-  background-size: 23px;
+  background-size: 1.15rem;
 }
 .input-code {
-  width: 350px;
+  width: 17.5rem;
   margin: auto;
   overflow: hidden;
-  margin-bottom: 30px;
+  margin-bottom: 1.5rem;
 }
 .input-code .plh {
-  font-size: 18px;
+  font-size: 0.9rem;
   color: #BBBBBB;
   letter-spacing: 0;
-  text-indent: 15px;
+  text-indent: 0.75rem;
 }
 .input-code input::-webkit-input-placeholder,
 .input-code textarea::-webkit-input-placeholder {
-  font-size: 18px;
+  font-size: 0.9rem;
   color: #BBBBBB;
   letter-spacing: 0;
-  text-indent: 15px;
+  text-indent: 0.75rem;
 }
 .input-code input:-moz-placeholder,
 .input-code textarea:-moz-placeholder {
-  font-size: 18px;
+  font-size: 0.9rem;
   color: #BBBBBB;
   letter-spacing: 0;
-  text-indent: 15px;
+  text-indent: 0.75rem;
 }
 .input-code input::-moz-placeholder,
 .input-code textarea::-moz-placeholder {
-  font-size: 18px;
+  font-size: 0.9rem;
   color: #BBBBBB;
   letter-spacing: 0;
-  text-indent: 15px;
+  text-indent: 0.75rem;
 }
 .input-code input:-ms-input-placeholder,
 .input-code textarea:-ms-input-placeholder {
-  font-size: 18px;
+  font-size: 0.9rem;
   color: #BBBBBB;
   letter-spacing: 0;
-  text-indent: 15px;
+  text-indent: 0.75rem;
 }
 .logo-box {
   position: absolute;
-  left: 156px;
-  top: 236px;
+  left: 7.8rem;
+  top: 11.8rem;
 }
 .logo-box p {
-  margin-top: 66px;
-  font-size: 36px;
+  margin-top: 3.3rem;
+  font-size: 1.8rem;
   color: #FFFFFF;
   letter-spacing: 0;
 }
 .input-code input {
-  width: 175px;
-  height: 60px;
-  line-height: 60px;
+  width: 8.75rem;
+  height: 3rem;
+  line-height: 3rem;
   background: #FFFFFF;
-  border: 1px solid #CCCCCC;
-  box-shadow: inset 0 1px 3px 0 rgba(0, 0, 0, 0.5);
-  border-radius: 4px;
+  border: 0.05rem solid #CCCCCC;
+  box-shadow: inset 0 0.05rem 0.15rem 0 rgba(0, 0, 0, 0.5);
+  border-radius: 0.2rem;
   float: left;
-  text-indent: 15px;
-  font-size: 18px;
+  text-indent: 0.75rem;
+  font-size: 0.9rem;
 }
 .input-code {
-  margin-bottom: 25px;
+  margin-bottom: 1.25rem;
 }
 .input-code .btn-code {
-  width: 150px;
-  height: 60px;
-  line-height: 60px;
+  width: 7.5rem;
+  height: 3rem;
+  line-height: 3rem;
   background: #ECAD14;
   float: right;
-  font-size: 18px;
+  font-size: 0.9rem;
   color: #FFFFFF;
   letter-spacing: 0;
   text-align: center;
@@ -181,29 +240,29 @@
 }
 .btn-register,
 .btn-login {
-  width: 350px;
-  height: 60px;
-  line-height: 60px;
+  width: 17.5rem;
+  height: 3rem;
+  line-height: 3rem;
   margin: auto;
-  font-size: 20px;
+  font-size: 1rem;
   color: #FFFFFF;
   letter-spacing: 0;
   background: #B93A2B;
-  border: 1px solid #CCCCCC;
-  border-radius: 4px;
-  margin-bottom: 17px;
+  border: 0.05rem solid #CCCCCC;
+  border-radius: 0.2rem;
+  margin-bottom: 0.85rem;
   text-align: center;
 }
 .btn-login {
-  margin-bottom: 40px;
+  margin-bottom: 2rem;
 }
 .register-tip {
-  width: 350px;
+  width: 17.5rem;
   margin: auto;
-  font-size: 14px;
+  font-size: 0.7rem;
   color: #888888;
   letter-spacing: 0;
-  margin-bottom: 36px;
+  margin-bottom: 1.8rem;
 }
 .register-tip.register-first-tip {
   text-align: left;
@@ -212,56 +271,56 @@
   text-align: center;
 }
 .register-footer {
-  padding: 70px 0;
+  padding: 3.5rem 0;
 }
 .register-footer p {
-  font-size: 16px;
+  font-size: 0.8rem;
   color: #888888;
   letter-spacing: 0;
   text-align: center;
 }
 .register-success img {
   display: block;
-  width: 105px;
-  height: 105px;
-  margin: 107px auto 0;
+  width: 5.25rem;
+  height: 5.25rem;
+  margin: 5.35rem auto 0;
 }
 .register-success h1 {
-  margin-top: 60px;
-  font-size: 28px;
+  margin-top: 3rem;
+  font-size: 1.4rem;
   color: #333333;
   letter-spacing: 0;
   text-align: center;
 }
 .register-success .time-toindex {
-  margin-top: 50px;
-  font-size: 18px;
+  margin-top: 2.5rem;
+  font-size: 0.9rem;
   color: #888888;
   letter-spacing: 0;
   text-align: center;
-  margin-bottom: 75px;
+  margin-bottom: 3.75rem;
 }
 .login-tip {
-  font-size: 16px;
+  font-size: 0.8rem;
   color: #888888;
   letter-spacing: 0;
   text-align: center;
-  margin-bottom: 28px;
+  margin-bottom: 1.4rem;
 }
 .login-tip a {
   color: #BBBBBB;
 }
 .refresh {
-  width: 350px;
+  width: 17.5rem;
   margin: auto;
   overflow: hidden;
 }
 .refresh span {
-  font-size: 16px;
+  font-size: 0.8rem;
   color: #BBBBBB;
   letter-spacing: 0;
   float: right;
-  margin-right: 14px;
+  margin-right: 0.7rem;
   text-decoration: underline;
 }
 /*# sourceMappingURL=register.css.map */

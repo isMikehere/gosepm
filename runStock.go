@@ -208,6 +208,7 @@ func webgo() {
 			"StockDetail":     handler.StockDetail,   //股票具体某字段值
 			"FloatEarning":    handler.FloatEarning,  //股票具体某字段值
 			"EarningRate":     handler.EarningRate,   //股票具体某字段值
+			"FormatRate":      handler.FormatRate,    //格式化比率0.xx->xx%
 			"Mul100": func(num int32) int32 {
 				return num * 100
 			},
@@ -296,14 +297,14 @@ func webgo() {
 	})
 	//用户
 	m.Group("/user", func() {
+		//个人中心
 		m.Get("/:id", handler.UserDetailHandler)
 		m.Get("/update/:id", handler.UserUpdateGetHandler)
 		m.Put("/update/:id", binding.Bind(model.User{}), handler.UserUpdateSaveHandler)
 		m.Post("/update/:id", binding.Bind(model.User{}), handler.UserUpdateSaveHandler)
 		m.Get("/search/:name", handler.SearchXUserHandler)
-		m.Group("/account", func() {
-			m.Get("/:id", handler.UserAccountHandler)
-		})
+		//我的
+		m.Get("/account/:id", handler.UserAccountHandler)
 
 		m.Group("/follow", func() {
 			m.Get("/:id", handler.FollowStep1Handler)
@@ -404,7 +405,7 @@ func main() {
 	runtime.GOMAXPROCS(*numCores)
 	// initCache()
 	//开启定时任务
-	// go handler.StartSchedule(handler.InitScheduleJobs(engine, redisCli))
-	// go handler.SubscribeMsgChan(engine, redisCli2)
+	go handler.StartSchedule(handler.InitScheduleJobs(engine, redisCli))
 	webgo()
+	// go handler.SubscribeMsgChan(engine, redisCli2)
 }

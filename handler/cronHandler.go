@@ -343,15 +343,25 @@ func DumpStockDetail(job *MyJob, ch chan map[string]interface{}) {
 func (job *MyJob) J_DayEarningCalc() {
 
 	//0、获取所有持仓
-	earningSql := "update user_account ua LEFT JOIN " +
+
+	earningSql := "update user_account ua " +
+		"LEFT JOIN " +
 		"(SELECT ors.user_id, sum(round(ors.stock_number * (cs.current_price - trans_price), 2)) earning, " +
-		"sum(round(ors.stock_number * cs.current_price, 2))  value FROM (SELECT user_id, stock_code,  sum(stock_number) stock_number,trans_price FROM stock_holding  WHERE holding_status = 1  GROUP BY user_id, stock_code, trans_price) ors" +
-		"LEFT JOIN  current_stock_detail cs  ON ors.stock_code = cs.stock_code" +
+		"sum(round(ors.stock_number * cs.current_price, 2))  value FROM " +
+		"(SELECT user_id, stock_code,  sum(stock_number) stock_number,trans_price FROM stock_holding " +
+		"WHERE holding_status = 1  GROUP BY user_id, stock_code, trans_price) ors " +
+		"LEFT JOIN  current_stock_detail cs  ON ors.stock_code = cs.stock_code " +
 		"GROUP BY ors.user_id) v on ua.user_id = v.user_id " +
+		"LEFT JOIN " +
+		"(select user_id,count(1) count from week_rank where rank=1 group by user_id) wr on ua.user_id = wr.user_id " +
+		"LEFT JOIN " +
+		"(select user_id,count(1) count from month_rank where rank=1 group by user_id) mr on ua.user_id = mr.user_id " +
 		"set ua.earning_rate = (v.value+ua.available_amount) /ua.init_amount, " + //总收益率
 		"ua.stock_amount = v.value, " + //股票总市值
 		"ua.total_amount = (v.value+ua.available_amount), " + //总资产 = (市值+可用金额)
 		"ua.earning = (v.value+ua.available_amount - ua.init_amount)," + //总收益 = 总资产-初始化金额
+		//周冠军次数，月冠军次数
+		"ua.week_times = wr.count,ua.month_times = mr.count," +
 		"ua.updated = now()"
 
 	_, err := job.Engine.Exec(earningSql)

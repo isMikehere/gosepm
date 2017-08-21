@@ -32,7 +32,7 @@ func TrxRateDataChartHander(ctx *macaron.Context, r *redis.Client, x *xorm.Engin
 	ua := new(model.UserAccount)
 	data1 := new(Data)
 	data2 := new(Data)
-	if has, _ := x.Where("user_id=?", uid).Get(ua); has {
+	if has, _ := x.Where("user_id=?", uid).Get(&ua); has {
 
 		data1.Name = "盈利笔数"
 		data1.Value = ua.SuccessTimes
@@ -48,7 +48,7 @@ func TrxRateDataChartHander(ctx *macaron.Context, r *redis.Client, x *xorm.Engin
 }
 
 /**
-排名图标
+排名图表
 **/
 func RankDataChartHandler(ctx *macaron.Context, x *xorm.Engine) {
 

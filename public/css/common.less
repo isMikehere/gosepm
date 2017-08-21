@@ -1,0 +1,185 @@
+body,ol,ul,h1,h2,h3,h4,h5,h6,p,th,td,dl,dd,form,fieldset,legend,input,textarea,select{margin:0;padding:0}
+body{    font-family: -apple-system,BlinkMacSystemFont,Helvetica Neue,Helvetica,Roboto,Arial,PingFang SC,Hiragino Sans GB,Microsoft Yahei,Microsoft Jhenghei,sans-serif;background:#fff;-webkit-text-size-adjust:100%;}
+a{color:#2d374b;text-decoration:none}
+a:hover{color:#cd0200;text-decoration:underline}
+em{font-style:normal}
+li{list-style:none}
+img{border:0;vertical-align:middle}
+table{border-collapse:collapse;border-spacing:0}
+p{word-wrap:break-word}
+body{
+    max-width: 1440px;
+    min-width: 900px;
+    margin: auto;
+}
+
+@rem:20rem;
+
+.homepage-header {
+    background: #333333;
+    width: 100%;
+    height: 50/@rem;
+    overflow: hidden;
+    font-size: 18/@rem;
+    color: #FFFFFF;
+    letter-spacing: 0;
+    line-height: 50/@rem;
+    .homepage-hd-help {
+        width: 40%;
+        float: left;
+        padding-left: 85/@rem;
+        overflow: hidden;
+        span {
+            float: left;
+            padding: 0 25/@rem;
+        }
+    }
+    .homepage-hd-login {
+        width: 40%;
+        float: right;
+        padding-right: 88/@rem;
+        overflow: hidden;
+        span {
+            float: right;
+            padding: 0 15/@rem;
+        }
+        .homepage-mine {
+            border-right: solid 1/@rem #FFFFFF;
+            height: 20/@rem;
+            line-height: 20/@rem;
+            padding: 0;
+            margin-top: 15/@rem;
+        }
+    }
+}
+
+.homepage-search {
+    overflow: hidden;
+    height: 118/@rem;
+    line-height: 118/@rem;
+    .homepage-sch-logo {
+        overflow: hidden;
+        display: inline-block;
+        img,
+        p {
+            float: left;
+        }
+        img {
+            width: 300/@rem;
+            padding: 20/@rem;
+            margin-left: 85/@rem;
+        }
+        p {
+            font-size: 24/@rem;
+            color: #888888;
+            letter-spacing: 0;
+        }
+    }
+    .homepage-sch-sch {
+        line-height: 40/@rem;
+        display: inline-block;
+        float: right;
+        margin-right: 96/@rem;
+        overflow: hidden;
+        margin-top: 40/@rem;
+        position: relative;
+        input {
+            background: rgba(255, 255, 255, 0.20);
+            border: 1/@rem solid #BBBBBB;
+            width: 420/@rem;
+            height: 38/@rem;
+            float: right;
+        }
+        span {
+            width: 91/@rem;
+            text-align: center;
+            background: #B93A2B;
+            font-size: 16/@rem;
+            color: #FFFFFF;
+            letter-spacing: 0;
+            float: right;
+        }
+        img {
+            margin-left: 20/@rem;
+            position: absolute;
+            margin-top: 10/@rem;
+        }
+    }
+}
+
+.homepage-bigbacg {
+    width: 1250/@rem;
+    margin: auto;
+    .homepage-bigbacg-navigation {
+        background: #B93A2B;
+        height: 80/@rem;
+        line-height: 80/@rem;
+        overflow: hidden;
+        span {
+            font-size: 26/@rem;
+            color: #FFFFFF;
+            letter-spacing: 0;
+            float: right;
+            padding: 0 48/@rem;
+        }
+        
+        .homepage-navigation-active,span:active {
+            background: #ECAD14;
+        }
+    }
+    
+}
+
+
+//right
+.hp-right-navigation {
+    width: 81/@rem;
+    position: fixed;
+    right: 0;
+    top: 20/@rem;
+    .hp-right-block {
+        background: #EEEEEE;
+        border-radius: 2/@rem;
+        height: 80/@rem;
+        margin-top: 5/@rem;
+        img {
+            text-align: center;
+            width: 32/@rem;
+            margin: 13/@rem 0 6/@rem 0;
+        }
+        div {
+            width: 100%;
+            text-align: center;
+        }
+    }
+}
+
+
+.hp-footer {
+    background: #333333;
+    margin-top: 50/@rem;
+    .hp-footer-declare {
+        padding: 20/@rem 0;
+        p {
+            font-size: 12/@rem;
+            color: #BBBBBB;
+            text-align: center;
+            padding: 5/@rem 0;
+        }
+    }
+}
+
+.container{
+    width: 1250/@rem;
+    margin: auto;
+    overflow: hidden;
+    .left-cont{
+        width: 230/@rem;
+        float: left;
+    }
+    
+    .right-cont{
+        width: 1020/@rem;
+        float: right;
+    }
+}

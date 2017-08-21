@@ -69,9 +69,12 @@ type UserAccount struct {
 	TotalAmount     float64   `xorm:"decimal(32,2)"` //总资产(总市值+可用金额)
 	TransFrequency  float64   `xorm:"decimal(16,2)"` //交易频率,
 	TotalTimes      int32     `xorm:"decimal(16,2)"` //失败次数,
+	WeekTimes       int32     `xorm:"int(11)"`       //周第一名次数,
+	MonthTimes      int32     `xorm:"int(11)"`       //月第一名次数,
 	SuccessTimes    int32     `xorm:"decimal(16,2)"` //成功率,
 	SuccessRate     float64   `xorm:"decimal(16,2)"` //成功率,
 	Rank            int       `xorm:"int(11)"`       //总收益排名
+	xCode           string    `xorm:"varchar(10)"`   //近30天收益最大的股票
 	TransStart      time.Time //首次交易时间
 	TotalFollow     int       `xorm:"int(10) "`    //订阅量
 	UserLevel       int8      `xorm:"varchar(20)"` // 用户级别;1:小白；2：熟客；3：高手；4：骨灰

@@ -31,7 +31,7 @@ func GetDayRanks(x *xorm.Engine) (string, []*model.RankData) {
 				dataRank.UserId = dayRank.UserId
 				dataRank.NickName = dayRank.NickName
 				dataRank.StockCode = dayRank.StockCode
-				dataRank.DayRate = FormateRate(dayRank.EarningRate)
+				dataRank.DayRate = FormatRate(dayRank.EarningRate)
 				dataRank.TotalFollow = dayRank.TotalFollow
 				dataRanks[i] = dataRank
 			}
@@ -69,7 +69,7 @@ func GetWeekRanks(x *xorm.Engine) (string, []*model.RankData) {
 				dataRank.UserId = rank.UserId
 				dataRank.NickName = rank.NickName
 				dataRank.StockCode = rank.StockCode
-				dataRank.WeekRate = FormateRate(rank.EarningRate)
+				dataRank.WeekRate = FormatRate(rank.EarningRate)
 				dataRank.TotalFollow = rank.TotalFollow
 				dataRanks[i] = dataRank
 			}
@@ -79,7 +79,6 @@ func GetWeekRanks(x *xorm.Engine) (string, []*model.RankData) {
 		if syncAt == "0001-01-01 00:00:00" {
 			syncAt = time.Now().Format(model.DATE_TIME_FORMAT)
 		}
-
 		return syncAt, rankData
 	} else {
 		return syncAt, nil
@@ -105,7 +104,7 @@ func GetMonthRanks(x *xorm.Engine) (string, []*model.RankData) {
 				dataRank.UserId = rank.UserId
 				dataRank.NickName = rank.NickName
 				dataRank.StockCode = rank.StockCode
-				dataRank.MonthRate = FormateRate(rank.EarningRate)
+				dataRank.MonthRate = FormatRate(rank.EarningRate)
 				dataRank.TotalFollow = rank.TotalFollow
 				dataRanks[i] = dataRank
 			}
@@ -163,12 +162,11 @@ func listTestRankData(x *xorm.Engine, page int) (map[string]interface{}, []*mode
 		" left join user u on ua.user_id = u.id " +
 		" left join week_rank wr on wr.user_id = ua.user_id" +
 		" left join month_rank mr on mr.user_id = ua.user_id "
-
 	if _, err := x.Sql(countSQL).Get(c); err == nil {
 		paginator := Paginator(page, c.Count)
-		sql := "select ua.rank,ua.user_id,u.nick_name,ua.earning_rate," +
+		sql := "select ua.user_id,u.nick_name,ua.earning_rate," +
 			" wr.earning_rate week_rate,mr.earning_rate month_rate," +
-			" ua.total_follow from user_account ua  " +
+			" ua.total_follow from user_account ua " +
 			" left join user u on ua.user_id = u.id " +
 			" left join week_rank wr on wr.user_id = ua.user_id" +
 			" left join month_rank mr on mr.user_id = ua.user_id " +

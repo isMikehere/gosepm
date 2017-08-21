@@ -10,7 +10,7 @@ type MonthRank struct {
 	UserId      int64
 	Rank        int       `xorm:int(11) `
 	NickName    string    `xorm:"varchar(32) not null"`
-	EarningRate float64   `xorm:"decimal(12,2) not null"`
+	EarningRate float64   `xorm:"float(12,2) not null"`
 	Month       string    `xorm:"char(7) not null"`
 	StockCode   string    `xorm:"varchar(10) not null"`
 	StockName   string    `xorm:"varchar(32) not null"`
@@ -31,7 +31,7 @@ type WeekRank struct {
 	UserId      int64
 	Rank        int       `xorm:int(11) `
 	NickName    string    `xorm:"varchar(32) not null"`
-	EarningRate float64   `xorm:"decimal(12,2) not null"`
+	EarningRate float64   `xorm:"float(12,2) not null"`
 	Month       string    `xorm:"char(7) not null"` //2017-01
 	Week        string    `xorm:"char(6)"`          //201721
 	StockCode   string    `xorm:"varchar(10) not null"`
@@ -52,7 +52,7 @@ type DayRank struct {
 	UserId      int64
 	Rank        int       `xorm:int(11) `
 	NickName    string    `xorm:"varchar(32) not null"`
-	EarningRate float64   `xorm:"decimal(12,2) not null"`
+	EarningRate float64   `xorm:"float(12,2) not null"`
 	Day         string    `xorm:"char(10) not null"` //yyyy-mm-dd
 	StockCode   string    `xorm:"varchar(10) not null"`
 	StockName   string    `xorm:"varchar(32) not null"`
