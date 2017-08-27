@@ -43,7 +43,7 @@ func MyHoldingHandler(sess session.Store, ctx *macaron.Context, x *xorm.Engine, 
 		if has, _ := x.Id(uid).Get(user); has {
 			ctx.Data["user"] = user
 			userAccount := new(model.UserAccount)
-			if has, _ := x.Where("user_id = ?", uid).Get(&userAccount); has {
+			if has, _ := x.Where("user_id = ?", uid).Get(userAccount); has {
 				ctx.Data["ua"] = userAccount
 			}
 			//stock holding list

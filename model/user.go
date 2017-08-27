@@ -74,7 +74,7 @@ type UserAccount struct {
 	SuccessTimes    int32     `xorm:"decimal(16,2)"` //成功率,
 	SuccessRate     float64   `xorm:"decimal(16,2)"` //成功率,
 	Rank            int       `xorm:"int(11)"`       //总收益排名
-	xCode           string    `xorm:"varchar(10)"`   //近30天收益最大的股票
+	XCode           string    `xorm:"varchar(10)"`   //近30天收益最大的股票
 	TransStart      time.Time //首次交易时间
 	TotalFollow     int       `xorm:"int(10) "`    //订阅量
 	UserLevel       int8      `xorm:"varchar(20)"` // 用户级别;1:小白；2：熟客；3：高手；4：骨灰

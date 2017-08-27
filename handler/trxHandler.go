@@ -32,18 +32,17 @@ func TrxRateDataChartHander(ctx *macaron.Context, r *redis.Client, x *xorm.Engin
 	ua := new(model.UserAccount)
 	data1 := new(Data)
 	data2 := new(Data)
+
 	if has, _ := x.Where("user_id=?", uid).Get(&ua); has {
 
 		data1.Name = "盈利笔数"
 		data1.Value = ua.SuccessTimes
 		data2.Name = "亏损笔数"
 		data2.Value = ua.TotalTimes - ua.SuccessTimes
-		jr.Code = "200"
-		datas = append(datas, data1, data2)
-		jr.Data = datas
-	} else {
-		jr.Code = "100"
 	}
+	datas = append(datas, data1, data2)
+	jr.Code = "200"
+	jr.Data = datas
 	ctx.JSON(200, jr)
 }
 

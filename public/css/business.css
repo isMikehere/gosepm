@@ -367,8 +367,8 @@ body {
   overflow: hidden;
 }
 .right-second .first-round {
-  border: 2rem solid #EE6858;
-  margin: 2.5rem 0 2.5rem 4.35rem;
+  /* border: 2rem solid #EE6858; */
+  /* margin: 2.5rem 0 2.5rem 4.35rem; */
 }
 .right-second .second-round {
   border: 2rem solid #25A46B;
