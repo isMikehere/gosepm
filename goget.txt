@@ -1,0 +1,25 @@
+thub.com/axgle/mahonia
+go get github.com/go-macaron/binding
+go get github.com/go-macaron/cache
+go get github.com/go-macaron/captcha
+go get github.com/go-macaron/session
+go get github.com/go-macaron/session/redis
+go get github.com/go-sql-driver/mysql
+go get github.com/go-xorm/core
+go get github.com/go-xorm/xorm
+go get github.com/robfig/cron
+go get github.com/shopspring/decimal
+go get github.com/stephenlyu/wxpay
+go get gopkg.in/macaron.v1
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+~
+"goget.txt" 13L, 450C                                         1,1           All
