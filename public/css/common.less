@@ -1,20 +1,72 @@
-body,ol,ul,h1,h2,h3,h4,h5,h6,p,th,td,dl,dd,form,fieldset,legend,input,textarea,select{margin:0;padding:0}
-body{    font-family: -apple-system,BlinkMacSystemFont,Helvetica Neue,Helvetica,Roboto,Arial,PingFang SC,Hiragino Sans GB,Microsoft Yahei,Microsoft Jhenghei,sans-serif;background:#fff;-webkit-text-size-adjust:100%;}
-a{color:#2d374b;text-decoration:none}
-a:hover{color:#cd0200;text-decoration:underline}
-em{font-style:normal}
-li{list-style:none}
-img{border:0;vertical-align:middle}
-table{border-collapse:collapse;border-spacing:0}
-p{word-wrap:break-word}
-body{
+body,
+ol,
+ul,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+th,
+td,
+dl,
+dd,
+form,
+fieldset,
+legend,
+input,
+textarea,
+select {
+    margin: 0;
+    padding: 0
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, Helvetica Neue, Helvetica, Roboto, Arial, PingFang SC, Hiragino Sans GB, Microsoft Yahei, Microsoft Jhenghei, sans-serif;
+    background: #fff;
+    -webkit-text-size-adjust: 100%;
+}
+
+a {
+    color: #2d374b;
+    text-decoration: none
+}
+
+a:hover {
+    color: #cd0200;
+    text-decoration: underline
+}
+
+em {
+    font-style: normal
+}
+
+li {
+    list-style: none
+}
+
+img {
+    border: 0;
+    vertical-align: middle
+}
+
+table {
+    border-collapse: collapse;
+    border-spacing: 0
+}
+
+p {
+    word-wrap: break-word
+}
+
+body {
     max-width: 1440px;
     min-width: 900px;
     margin: auto;
 }
 
-@rem:20rem;
-
+@rem: 20rem;
 .homepage-header {
     background: #333333;
     width: 100%;
@@ -89,6 +141,7 @@ body{
             width: 420/@rem;
             height: 38/@rem;
             float: right;
+            text-indent: 50px;
         }
         span {
             width: 91/@rem;
@@ -122,14 +175,12 @@ body{
             float: right;
             padding: 0 48/@rem;
         }
-        
-        .homepage-navigation-active,span:active {
+        .homepage-navigation-active,
+        span:active {
             background: #ECAD14;
         }
     }
-    
 }
-
 
 //right
 .hp-right-navigation {
@@ -154,7 +205,6 @@ body{
     }
 }
 
-
 .hp-footer {
     background: #333333;
     margin-top: 50/@rem;
@@ -169,17 +219,92 @@ body{
     }
 }
 
-.container{
+.container {
     width: 1250/@rem;
     margin: auto;
     overflow: hidden;
-    .left-cont{
+    .left-cont {
         width: 230/@rem;
         float: left;
     }
-    
-    .right-cont{
+    .right-cont {
         width: 1020/@rem;
         float: right;
     }
+}
+
+.subscribe-container {
+    margin: 100/@rem 0 53/@rem 118/@rem;
+    height: 6rem;
+}
+
+.subscribe-steps {
+    width: 70%;
+    position: relative;
+    border-top: 1px solid #979797;
+    .steps-refer-box {
+        position: absolute;
+        top: -0.6rem;
+    }
+    .first-refer {
+        left: 3rem;
+    }
+    .second-pay {
+        left: 18rem;
+    }
+    .third-complete {
+        left: 33rem;
+    }
+    .steps-refer {
+        font-size: 24/@rem;
+        color: #888;
+        letter-spacing: 0;
+        margin-top: 34/@rem;
+    }
+    .steps-circle {
+        width: 24/@rem;
+        height: 24/@rem;
+        border-radius: 50%;
+        background: #D8D8D8;
+        margin: auto;
+    }
+    .steps-refer-active {
+        .steps-refer {
+            color: #333;
+        }
+        .steps-circle {
+            &:before {
+                content: '';
+                width: 42/@rem;
+                height: 42/@rem;
+                border-radius: 50%;
+                background: rgba(236, 173, 20, 0.40);
+                margin: auto;
+                position: absolute;
+                z-index: 2;
+                top: 13%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+            }
+            &:after {
+                content: '';
+                width: 30/@rem;
+                height: 30/@rem;
+                border-radius: 50%;
+                background: #ECAD14;
+                position: absolute;
+                z-index: 1;
+                top: 13%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+            }
+        }
+    }
+}
+
+.first-refer,
+.second-pay,
+.third-complete {
+    display: inline-block;
+    text-align: center;
 }

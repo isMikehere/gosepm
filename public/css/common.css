@@ -131,6 +131,7 @@ body {
   width: 21rem;
   height: 1.9rem;
   float: right;
+  text-indent: 50px;
 }
 .homepage-search .homepage-sch-sch span {
   width: 4.55rem;
@@ -213,5 +214,74 @@ body {
 .container .right-cont {
   width: 51rem;
   float: right;
+}
+.subscribe-container {
+  margin: 5rem 0 2.65rem 5.9rem;
+  height: 6rem;
+}
+.subscribe-steps {
+  width: 70%;
+  position: relative;
+  border-top: 1px solid #979797;
+}
+.subscribe-steps .steps-refer-box {
+  position: absolute;
+  top: -0.6rem;
+}
+.subscribe-steps .first-refer {
+  left: 3rem;
+}
+.subscribe-steps .second-pay {
+  left: 18rem;
+}
+.subscribe-steps .third-complete {
+  left: 33rem;
+}
+.subscribe-steps .steps-refer {
+  font-size: 1.2rem;
+  color: #888;
+  letter-spacing: 0;
+  margin-top: 1.7rem;
+}
+.subscribe-steps .steps-circle {
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 50%;
+  background: #D8D8D8;
+  margin: auto;
+}
+.subscribe-steps .steps-refer-active .steps-refer {
+  color: #333;
+}
+.subscribe-steps .steps-refer-active .steps-circle:before {
+  content: '';
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 50%;
+  background: rgba(236, 173, 20, 0.4);
+  margin: auto;
+  position: absolute;
+  z-index: 2;
+  top: 13%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+.subscribe-steps .steps-refer-active .steps-circle:after {
+  content: '';
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: #ECAD14;
+  position: absolute;
+  z-index: 1;
+  top: 13%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+.first-refer,
+.second-pay,
+.third-complete {
+  display: inline-block;
+  text-align: center;
 }
 /*# sourceMappingURL=common.css.map */
