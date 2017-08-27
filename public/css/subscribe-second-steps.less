@@ -1,0 +1,132 @@
+@import 'common.less';
+.left-cont {
+    background-image: linear-gradient(-134deg, #676767 0%, #393939 100%);
+}
+
+
+
+.subscription-list {
+    width: 70%;
+    background: #FFFFFF;
+    border: 1px solid #D8D8D8;
+    margin: 0 0 124/@rem 104/@rem;
+    overflow: hidden;
+    .subscription-yes {
+        width: 90%;
+        margin: 47/@rem 0 56/@rem 63/@rem;
+        position: relative;
+        .congratulate-img {
+            text-align: center;
+            margin: auto;
+            display: inline-block;
+            img {
+                width: 100/@rem;
+                height: 100/@rem;
+            }
+        }
+        .congratulate-total {
+            display: inline-block;
+            position: absolute;
+            top: 50%;
+            left: 125/@rem;
+            transform: translate(0, -50%);
+            .congratulate-first {
+                font-size: 24/@rem;
+                color: #333333;
+                letter-spacing: 0;
+            }
+            .congratulate-second {
+                font-size: 18/@rem;
+                color: #888888;
+                letter-spacing: 0;
+            }
+        }
+    }
+    .congratulate-first-line {
+        border: 1px solid #D8D8D8;
+        width: 90%;
+        margin: auto;
+    }
+}
+
+.payoff-situation {
+    overflow: hidden;
+    .choice-payoff {
+        font-size: 18/@rem;
+        color: #333333;
+        letter-spacing: 0;
+        margin: 30/@rem 0 30/@rem 51/@rem;
+    }
+    .choice-payoff-all {
+        overflow: hidden;
+        width: 100%;
+        .payoff-wei,
+        .payoff-zhi {
+            display: inline-block;
+            width: 150/@rem;
+            height: 60/@rem;
+            line-height: 60/@rem;
+            background: #FFFFFF;
+            border: 3/@rem solid #979797;
+            margin-left: 56/@rem;
+            float: left;
+            img {
+                margin-left: 16/@rem;
+            }
+            span {
+                font-size: 16/@rem;
+                color: #333333;
+                letter-spacing: 0;
+            }
+        }
+        .payoff-wei:hover,
+        .payoff-zhi:hover {
+            border: 3/@rem solid #ECAD14;
+        }
+        .payoff-money {
+            display: inline-block;
+            float: right;
+            margin-right: 56/@rem;
+            line-height: 60/@rem;
+            font-size: 18/@rem;
+            color: #333333;
+            letter-spacing: 0;
+            .money {
+                font-size: 24/@rem;
+                color: #EE0101;
+                letter-spacing: 0;
+            }
+        }
+    }
+}
+
+.payoff-wei {
+    img {
+        width: 36/@rem;
+        height: 36/@rem;
+    }
+}
+
+.payoff-zhi {
+    img {
+        width: 30/@rem;
+        height: 30/@rem;
+    }
+}
+
+.button-confirm {
+    width: 180/@rem;
+    height: 45/@rem;
+    float: right;
+    font-size: 18/@rem;
+    color: #FFFFFF;
+    letter-spacing: 0;
+    background: #F43923;
+    border-radius: 2/@rem;
+    border: none;
+    margin: 44/@rem 56/@rem 63/@rem 0;
+}
+
+.hp-footer {
+    margin: 0;
+}
