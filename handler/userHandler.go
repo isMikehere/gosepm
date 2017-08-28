@@ -54,7 +54,7 @@ func LoginPostHandler(user model.User, sess session.Store, ctx *macaron.Context,
 		u.LoginCount++
 		u.LastLoginDate = time.Now()
 		sess.Set("user", u)
-		x.Update(u)
+		x.ID(u.Id).Update(u)
 		// ctx.Redirect("/index.htm")
 		IndexHandler(sess, ctx, x, r)
 	} else {
