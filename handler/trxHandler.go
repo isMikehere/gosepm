@@ -14,7 +14,7 @@ import (
 )
 
 func TrxHandler(ctx *macaron.Context) {
-	ctx.HTML(200, "trx")
+	ctx.HTML(200, "deal")
 }
 
 /**

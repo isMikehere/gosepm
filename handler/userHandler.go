@@ -204,12 +204,12 @@ func UserDetailHandler(sess session.Store, ctx *macaron.Context, x *xorm.Engine,
 
 	//1、根据用户ID获取用户信息
 	//2、判断产讯用户是否是本人
-
 	if id, _ := strconv.Atoi(ctx.Params(":id")); id > 0 {
 		user := new(model.User)
 		ctx.Data["user"] = user
 		ctx.HTML(200, "user_center")
 	}
+
 }
 
 //跳转我的

@@ -18,7 +18,7 @@ import (
 	"github.com/go-macaron/captcha"
 	"github.com/go-macaron/session"
 	_ "github.com/go-macaron/session/redis"
-	redis "github.com/go-redis/redis"
+	"github.com/go-redis/redis"
 	"github.com/go-xorm/core"
 	"github.com/go-xorm/xorm"
 	macaron "gopkg.in/macaron.v1"
@@ -183,7 +183,8 @@ func webgo() {
 	// 	ProviderConfig: "addr=" + model.RedisHost + ",password=xceof",
 	// }))
 
-	//验证码验证
+	//验证码验证o
+
 	m.Use(cache.Cacher())
 	m.Use(captcha.Captchaer())
 	//模版引擎配置
@@ -203,12 +204,12 @@ func webgo() {
 			"GetUserNickName": handler.GetUserNickName,
 			"FormatDate":      handler.FormatDate,
 			"FormatDateTime":  handler.FormatDateTime,
-			"StockValue":      handler.StockValue,    //股票市值
+			"StockValue":      handler.StockValue, //股票市值
 			"MaskStockCode":   handler.MaskStockCode, //股票掩码
-			"StockDetail":     handler.StockDetail,   //股票具体某字段值
-			"FloatEarning":    handler.FloatEarning,  //股票具体某字段值
-			"EarningRate":     handler.EarningRate,   //股票具体某字段值
-			"FormatRate":      handler.FormatRate,    //格式化比率0.xx->xx%
+			"StockDetail":     handler.StockDetail, //股票具体某字段值
+			"FloatEarning":    handler.FloatEarning, //股票具体某字段值
+			"EarningRate":     handler.EarningRate, //股票具体某字段值
+			"FormatRate":      handler.FormatRate, //格式化比率0.xx->xx%
 			"Mul100": func(num int32) int32 {
 				return num * 100
 			},
@@ -249,30 +250,35 @@ func webgo() {
 	m.Use(func(sess session.Store, ctx *macaron.Context, x *xorm.Engine, r *redis.Client, f *session.Flash) {
 
 		log.Println("-----before a request--" + ctx.Req.RequestURI)
+		//check login status
+		u := sess.Get("user")
+		login := false
+		if u != nil {
+			login = true
+			ctx.Data["user"] = u
+		}
+		ctx.Data["login"] = login
 		ctx.Data["webpath"] = ctx.Req.Host
+		log.Printf("webpath:%s", ctx.Req.Host)
 		ctx.Data["x"] = x
 		ctx.Data["r"] = r
-
-		url := ctx.Req.RequestURI
-		if strings.Contains(url, "/login") ||
-			strings.Contains(url, "/register.htm") ||
-			strings.Contains(url, "/mobileCode/") ||
-			strings.Contains(url, "index.htm") ||
-			strings.Contains(url, ".js") ||
-			strings.Contains(url, ".css") {
-			ctx.Next()
-
-		} else {
-			u := sess.Get("user")
-			x.Id(1).Find(&u)
-
-			if u == nil {
-				ctx.Redirect("/login.htm")
-			} else {
-				ctx.Data["login"] = true
+		//filter the resouce
+		if !login {
+			url := ctx.Req.RequestURI
+			if strings.Contains(url, "/login") ||
+				strings.Contains(url, "/register.htm") ||
+				strings.Contains(url, "/mobileCode/") ||
+				strings.Contains(url, "index.htm") ||
+				strings.Contains(url, "/header.htm") ||
+				strings.Contains(url, "/tail.htm") ||
+				strings.Contains(url, ".js") ||
+				strings.Contains(url, ".css") {
 				ctx.Next()
-				ctx.Data["user"] = u
+			} else {
+				ctx.Redirect("/login.htm")
 			}
+		} else {
+			ctx.Next()
 		}
 		log.Println("-----after a request--" + ctx.Req.RequestURI)
 	})
@@ -367,7 +373,7 @@ func webgo() {
 	// 	m.Get("/callback", hanlder.weixinCallback)
 	// })
 
-	//排名
+	//模拟排行榜
 	m.Get("/rank/:page", handler.RankListHandler)
 
 	//***************test ******************

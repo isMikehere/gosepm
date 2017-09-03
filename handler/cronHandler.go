@@ -343,7 +343,6 @@ func DumpStockDetail(job *MyJob, ch chan map[string]interface{}) {
 func (job *MyJob) J_DayEarningCalc() {
 
 	//0、获取所有持仓
-
 	earningSql := "update user_account ua " +
 		"LEFT JOIN " +
 		"(SELECT ors.user_id, sum(round(ors.stock_number * (cs.current_price - trans_price), 2)) earning, " +

@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/axgle/mahonia"
-	redis "github.com/go-redis/redis"
+	"github.com/go-redis/redis"
 
 	"github.com/go-macaron/session"
 	"github.com/shopspring/decimal"
@@ -415,6 +415,7 @@ func TestN() {
 地址缩短工具
 **/
 func ShortMe(path string) (bool, string) {
+
 	x := url.URL{}
 	x.Host = model.ME_HOST
 	x.Scheme = model.ME_SCHEMA
