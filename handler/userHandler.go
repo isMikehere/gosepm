@@ -15,7 +15,7 @@ import (
 
 	"github.com/go-macaron/captcha"
 	"github.com/go-macaron/session"
-	redis "github.com/go-redis/redis"
+	"github.com/go-redis/redis"
 	"github.com/go-xorm/xorm"
 	macaron "gopkg.in/macaron.v1"
 )
@@ -221,13 +221,14 @@ func UserAccountHandler(sess session.Store, ctx *macaron.Context, x *xorm.Engine
 	id := 0
 	user := new(model.User)
 	if id, _ = strconv.Atoi(ctx.Params(":id")); id > 0 {
-		ctx.Data["self"] = false
-		if has, _ := x.Id(id).Get(&user); !has { //get the user again
+		ctx.Data["user"] = false
+		if has, _ := x.Id(id).Get(&user); !has {
+			//get the user again
 			ctx.HTML(200, "notfound")
 			return
 		}
 	} else {
-		ctx.Data["self"] = true
+		ctx.Data["user"] = true
 		loginUser := sess.Get("user")
 		v := reflect.ValueOf(loginUser)
 		user = v.Interface().(*model.User)
@@ -235,8 +236,9 @@ func UserAccountHandler(sess session.Store, ctx *macaron.Context, x *xorm.Engine
 	ctx.Data["user"] = user
 
 	userAccount := new(model.UserAccount)
-	//get useraccount
-	if err := x.Where("user_id=?", user.Id).Find(&userAccount); err != nil { //ua
+	//get userAccount
+	if err := x.Where("user_id=?", user.Id).Find(&userAccount); err != nil {
+		//ua
 		ctx.Data["userAccount"] = userAccount
 		// get the ranking data
 		weekRank := new(model.WeekRank)
@@ -383,7 +385,7 @@ func SearchXUserHandler(ctx *macaron.Context, x *xorm.Engine) {
 	name := ctx.Params("name")
 	users := make([]*model.User, 0)
 	log.Printf("%s", name)
-	if err := x.Where("nick_name like ?", "%"+name+"%").Limit(5, 0).Find(&users); err == nil {
+	if err := x.Where("nick_name like ?", "%" + name + "%").Limit(5, 0).Find(&users); err == nil {
 		log.Print(users)
 		ctx.JSON(200, users)
 	} else {

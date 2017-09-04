@@ -1,41 +1,9 @@
 {{template "header" .}} {{ $r:=.r }} {{ $x:=.x }}
 <script src="/public/js/echarts.common.min.js"></script>
 <script src="/public/js/ecStat.js"></script>
-<input id="webpath" type="hidden" value="http://{{.webpath}}">
-<input type="hidden" id="uid" value="{{.ua.UserId}}"/>
+<input type="hidden" id="uid" value="{{.user.Id}}"/>
 <input type="hidden" id="nickName" value="{{.user.NickName}}"/>
-<div class="hp-right-navigation">
-    <div class="hp-right-block">
-        <div>
-            <img src="/public/img/custom-service.png"/>
-        </div>
-        <div>客服</div>
-    </div>
-    <div class="hp-right-block">
-        <div>
-            <img src="/public/img/share3.png"/>
-        </div>
-        <div>分享</div>
-    </div>
-    <div class="hp-right-block">
-        <div>
-            <img src="/public/img/info.png"/>
-        </div>
-        <div>消息</div>
-    </div>
-    <div class="hp-right-block">
-        <div>
-            <img src="/public/img/public.png"/>
-        </div>
-        <div>公众号</div>
-    </div>
-    <div class="hp-right-block">
-        <div>
-            <img src="/public/img/app.png"/>
-        </div>
-        <div>APP</div>
-    </div>
-</div>
+
 <div class="container">
     <div class="left-cont">
         <div class="left-first">
@@ -82,7 +50,7 @@
                 </div>
                 <div class="right-chart ">
                     <div class="right-firstline two"></div>
-                    <div class="right-curve" id="chart2" style="width:height:200px;"></div>
+                    <div class="right-curve chart2" id="chart2"></div>
                     <div class="curve-percent">
                         <div>本周击败了<span>99</span>%的高手</div>
                         <div>本周击败了<span>99</span>%的高手</div>
@@ -91,10 +59,10 @@
             </div>
             <div class="bigline"></div>
             <div class="right-second">
-                <div id="chart1" style="width: 250px;height:250px;" class="first-round"></div>
+                <div id="chart1" class="first-round chart1"></div>
                 <ul class="second-explain">
                     <li>盈利笔数：<span>0</span>笔</li>
-                    <li>亏损笔数：<span>0</spn>笔</li>
+                    <li>亏损笔数：<span>0</span>笔</li>
                     <li>成功率：<span>--</span>%</li>
                     <li>交易频率：<span>1.1</span>（天/次）</li>
                 </ul>
@@ -139,160 +107,6 @@
             </div>
         </div>
     </div>
-    <div class="hp-footer">
-        <div class="hp-footer-declare">
-            <p>
-                客户服务热线：4006900000-2-2 欢迎批评指正
-            </p>
-            <p>
-                常见问题解答 互联网违法和不良信息举报 金修意见反馈留言板
-            </p>
-            <p>
-                金修简介 | About Sina | 广告服务 | 联系我们 | 招聘信息 | 网站律师 | JINXIU English | 通行证注册 | 产品答疑
-            </p>
-            <p>
-                Copyright © 1996-2017 JINXIU Corporation, All Rights Reserved
-            </p>
-            <p>
-                金修金融公司　版权所有
-            </p>
-        </div>
-    </div>
-    <script type="text/javascript" charset="utf-8">
-        //init the ranking chart
-        //******************************************************************************
-        var echart1 = echarts.init(document.getElementById('chart1'));
-        echart1.showLoading({
-            text: '正在努力加载中...'
-        });
-
-        var values = [];
-        // 同步执行
-        $.ajaxSettings.async = false;
-
-        // 加载数据
-        var path = $("#webpath").val() + '/user/trxRate/{{.user.Id}}'
-        $.getJSON(path, function (json) {
-            if (json.code == "200") {
-                values = json.data;
-                echart1.hideLoading()
-            }
-        });
-        // 指定图表的配置项和数据
-        option = {
-            title: {
-                text: '{{.user.NickName}}的交易情况',
-                subtext: '',
-                x: 'center'
-            },
-            tooltip: {
-                trigger: 'item',
-                formatter: "{a} <br/>{b} : {c} ({d}%)"
-            },
-            legend: {
-                orient: 'vertical',
-                left: 'left',
-                data: ['盈利笔数', '亏损笔数']
-            },
-            series: [
-                {
-                    name: nickName + '的交易情况',
-                    type: 'pie',
-                    radius: '55%',
-                    center: ['50%', '60%'],
-                    data: values,
-                    itemStyle: {
-                        emphasis: {
-                            shadowBlur: 10,
-                            shadowOffsetX: 0,
-                            shadowColor: 'rgba(0, 0, 0, 0.5)'
-                        }
-                    }
-                }
-            ]
-        };
-        // 使用刚指定的配置项和数据显示图表。
-        echart1.setOption(option);
-        //******************************************************************************
-        var echart2 = echarts.init(document.getElementById('chart2'));
-        $.getJSON($("#webpath").val() + '/user/rankDataChart/{{.user.Id}}', function (json) {
-
-            var data = json.data
-
-            var myRegression = ecStat.regression('exponential', data);
-            myRegression.points.sort(function (a, b) {
-                return a[0] - b[0];
-            });
-
-            echart2.setOption({
-                title: {
-                    text: '{{.user.NickName}}周排名变化',
-                    left: 'center',
-                    top: 21
-                },
-                tooltip: {
-                    trigger: 'axis',
-                    axisPointer: {
-                        type: 'cross'
-                    }
-                },
-                xAxis: {
-                    type: 'value',
-                    min: 10,
-                    splitLine: {
-                        lineStyle: {
-                            type: 'dashed'
-                        }
-                    },
-                },
-                yAxis: {
-                    type: 'value',
-                    min: 1,
-                    splitLine: {
-                        lineStyle: {
-                            type: 'dashed'
-                        }
-                    },
-                },
-                series: [{
-                    name: '周',
-                    type: 'scatter',
-                    show: false,
-                    label: {
-                        emphasis: {
-                            show: false
-                        }
-                    },
-                    data: data
-                }, {
-                    name: '排名',
-                    type: 'line',
-                    showSymbol: false,
-                    data: myRegression.points,
-                    markPoint: {
-                        itemStyle: {
-                            normal: {
-                                color: 'transparent'
-                            }
-                        },
-                        label: {
-                            normal: {
-                                show: false,
-                                position: 'left',
-                                formatter: myRegression.expression,
-                                textStyle: {
-                                    color: '#333',
-                                    fontSize: 14
-                                }
-                            }
-                        },
-                        data: [{
-                            coord: myRegression.points[myRegression.points.length - 1]
-                        }]
-                    }
-                }]
-            });
-        });
-    </script>
-    </body>
-    </html>
+</div>
+<script src="/public/js/ua.js"></script>
+{{template "tail" .}}

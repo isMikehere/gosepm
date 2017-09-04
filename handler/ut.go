@@ -44,8 +44,29 @@ func Md5(text string) string {
 /*
  格式化比例
 */
-func FormatRate(rate float64) string {
-	return fmt.Sprintf("%s%s", decimal.NewFromFloat(rate).Mul(decimal.New(100, 0)).StringFixed(2), "%")
+func FormatRate(rate interface{}) string {
+
+	switch t := rate.(type) {
+	case string:
+		{
+			if d, err := decimal.NewFromString(t); err == nil {
+				return fmt.Sprintf("%s%s", d.Mul(decimal.New(100, 0)).StringFixed(2), "%")
+			}
+			return "";
+
+		}
+	case float32:
+		{
+			return fmt.Sprintf("%s%s", decimal.NewFromFloat(float64(t)).Mul(decimal.New(100, 0)).StringFixed(2), "%")
+		}
+	case float64:
+		{
+			return fmt.Sprintf("%s%s", decimal.NewFromFloat(t).Mul(decimal.New(100, 0)).StringFixed(2), "%")
+
+		}
+	default:
+		return "--"
+	}
 }
 
 /*
@@ -106,9 +127,9 @@ func GetStock5Stages(stockList string) (bool, map[string][]string) {
 	client := &http.Client{}
 	reqest, _ := http.NewRequest("GET", path, nil)
 
-	// reqest.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
+	// request.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
 	reqest.Header.Set("Accept-Charset", "utf-8;q=0.7,*;q=0.3")
-	// reqest.Header.Set("Accept-Language", "zh-CN,zh;q=0.8,en;q=0.6")
+	// reqeust.Header.Set("Accept-Language", "zh-CN,zh;q=0.8,en;q=0.6")
 	reqest.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36")
 
 	// resp, _ := http.Get(path)
@@ -118,7 +139,8 @@ func GetStock5Stages(stockList string) (bool, map[string][]string) {
 
 	body, _ := ioutil.ReadAll(resp.Body)
 
-	if resp.StatusCode == 200 { //相应成功
+	if resp.StatusCode == 200 {
+		//相应成功
 
 		bodyStr := string(body)
 
@@ -126,7 +148,8 @@ func GetStock5Stages(stockList string) (bool, map[string][]string) {
 		var stockCodes []string
 		var result = make(map[string][]string, 0)
 
-		if strings.Index(stockList, ",") > 0 { //多个股票
+		if strings.Index(stockList, ",") > 0 {
+			//多个股票
 			stockCodes = strings.Split(stockList, ",")
 		} else {
 			stockCodes = make([]string, 1)
@@ -158,12 +181,14 @@ func GetStock5StagesWithChan(ch chan map[string]interface{}, stockList string) {
 	//一定要关闭
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
-	if resp.StatusCode == 200 { //相应成功
+	if resp.StatusCode == 200 {
+		//相应成功
 		bodyStr := string(body)
 		// 定义切片
 		var stockCodes []string
 		var result = make(map[string]interface{}, 0)
-		if strings.Index(stockList, ",") > 0 { //多个股票
+		if strings.Index(stockList, ",") > 0 {
+			//多个股票
 			stockCodes = strings.Split(stockList, ",")
 		} else {
 			stockCodes = make([]string, 1)
@@ -238,7 +263,7 @@ func ConcatStockList(stockList interface{}) string {
 				buffer.WriteString(AddExcToStockCode(t[0].StockCode))
 			} else {
 				for i, v := range t {
-					if i < len-1 {
+					if i < len - 1 {
 						buffer.WriteString(AddExcToStockCode(v.StockCode) + ",")
 					} else {
 						buffer.WriteString(AddExcToStockCode(v.StockCode))
@@ -254,7 +279,7 @@ func ConcatStockList(stockList interface{}) string {
 				buffer.WriteString(AddExcToStockCode(t[0].StockCode))
 			} else {
 				for i, v := range t {
-					if i < len-1 {
+					if i < len - 1 {
 						buffer.WriteString(AddExcToStockCode(v.StockCode) + ",")
 					} else {
 						buffer.WriteString(AddExcToStockCode(v.StockCode))
@@ -269,7 +294,7 @@ func ConcatStockList(stockList interface{}) string {
 				buffer.WriteString(t[0].StockCode)
 			} else {
 				for i, v := range t {
-					if i < len-1 {
+					if i < len - 1 {
 						buffer.WriteString(v.StockCode + ",")
 					} else {
 						buffer.WriteString(v.StockCode)
@@ -284,7 +309,7 @@ func ConcatStockList(stockList interface{}) string {
 				buffer.WriteString(t[0])
 			} else {
 				for i, v := range t {
-					if i < len-1 {
+					if i < len - 1 {
 						buffer.WriteString(v + ",")
 					} else {
 						buffer.WriteString(v)
@@ -320,11 +345,11 @@ func OrderSnGenerator(redisCli *redis.Client) string {
 	var lock = "order_sn_lock"
 	t := time.Now().Format(model.DATE_ORDER_FORMAT)
 	for {
-		if f, _ := redisCli.SetNX(lock, "lock", 3*time.Second).Result(); f {
+		if f, _ := redisCli.SetNX(lock, "lock", 3 * time.Second).Result(); f {
 			s, _ := redisCli.Get("order_sn").Result()
 			if s == "" {
 				s = "0001"
-				redisCli.Set("order_sn", s, 24*time.Hour)
+				redisCli.Set("order_sn", s, 24 * time.Hour)
 				redisCli.Del(lock)
 				return t + s
 			} else {
@@ -332,7 +357,7 @@ func OrderSnGenerator(redisCli *redis.Client) string {
 				i++
 				d := formateSn(strconv.Itoa(i))
 				fmt.Print("%s", d)
-				redisCli.Set("order_sn", d, 24*time.Hour)
+				redisCli.Set("order_sn", d, 24 * time.Hour)
 				redisCli.Del(lock)
 				return t + d
 			}

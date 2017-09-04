@@ -258,7 +258,7 @@ func webgo() {
 			ctx.Data["user"] = u
 		}
 		ctx.Data["login"] = login
-		ctx.Data["webpath"] = model.HOST;
+		ctx.Data["webpath"] = ctx.Req.Host
 		log.Printf("webpath:%s", ctx.Req.Host)
 		ctx.Data["x"] = x
 		ctx.Data["r"] = r

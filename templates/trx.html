@@ -12,53 +12,53 @@
         if (code != "") {
             var url = $("#webpath").val() + "/stock/" + code
             $.getJSON(url, function (data) {
-               var arr= data.data.split(",")
-                if (data.code =="200" && arr.length > 3 &&  $("#cp").val() != arr[3]) {
-                    $("#cp").val(arr[3])
-                }
-            }
+                        var arr = data.data.split(",")
+                        if (data.code == "200" && arr.length > 3 && $("#cp").val() != arr[3]) {
+                            $("#cp").val(arr[3])
+                        }
+                    }
             )
         }
     }, 2000)
 
     $(document).ready(
-        function () {
-            //绑定
-            $("#entrust").bind("click", function () {
-                //检查数量
-                if (parseInt($("#quantity").val()) % 100 != 0) {
-                    alert("购买数量为100的整数倍!")
-                    return
-                }
+            function () {
+                //绑定
+                $("#entrust").bind("click", function () {
+                    //检查数量
+                    if (parseInt($("#quantity").val()) % 100 != 0) {
+                        alert("购买数量为100的整数倍!")
+                        return
+                    }
 
-                var url = $("#webpath").val() + "/trx/toEntrust"
-                $.ajax({
-                    type: 'POST',
-                    url: url,
-                    data: $("#trxForm").serialize(),
-                    success: function (data) {
-                        if (data.code == "200") {
-                            alert("委托成功")
-                        } else {
-                            alert("委托失败")
-                        }
-                    },
-                    dataType: "json"
+                    var url = $("#webpath").val() + "/trx/toEntrust"
+                    $.ajax({
+                        type: 'POST',
+                        url: url,
+                        data: $("#trxForm").serialize(),
+                        success: function (data) {
+                            if (data.code == "200") {
+                                alert("委托成功")
+                            } else {
+                                alert("委托失败")
+                            }
+                        },
+                        dataType: "json"
+                    })
                 })
+
+                //autocomplete
+                var stocks = new Bloodhound({
+                    datumTokenizer: Bloodhound.tokenizers.whitespace,
+                    queryTokenizer: Bloodhound.tokenizers.whitespace,
+                    prefetch: '/searchStock.htm'
+                });
+
+                $('#stockCodex .typeahead').typeahead(null, {
+                    name: 'stocks',
+                    source: stocks
+                });
             })
-
-            //autocomplete 
-            var stocks = new Bloodhound({
-                datumTokenizer: Bloodhound.tokenizers.whitespace,
-                queryTokenizer: Bloodhound.tokenizers.whitespace,
-                prefetch: '/searchStock.htm'
-            });
-
-            $('#stockCodex .typeahead').typeahead(null, {
-                name: 'stocks',
-                source: stocks
-            });
-        })
 
 </script>
 <div id="body">
@@ -67,22 +67,25 @@
         <div id="stockCodeX">
             <input class="typeahead" id="stockCode" name="stockCode" type="text" placeholder="股票代码">
         </div>
-        购买数量: <input id="quantity" name="quantity" placeholder="购买数量" value="" /> 购买价格: <input id="buyPrice" name="buyPrice"
-            placeholder="委托价格" value="" /> 类型: <input name="trxType" placeholder="买进" value="1" />
-        <input type="button" id="entrust" value="委托交易" />
-        <input type="hidden" id="cp" />
+        购买数量: <input id="quantity" name="quantity" placeholder="购买数量" value=""/> 购买价格: <input id="buyPrice"
+                                                                                              name="buyPrice"
+                                                                                              placeholder="委托价格"
+                                                                                              value=""/> 类型: <input
+            name="trxType" placeholder="买进" value="1"/>
+        <input type="button" id="entrust" value="委托交易"/>
+        <input type="hidden" id="cp"/>
     </form>
 </div>
 <div>
     <table>
         <thead>
-            <tr>
-                <td>股票代码</td>
-                <td>委托类型</td>
-                <td>委托数量</td>
-                <td>委托价格</td>
-                <td>委托时间</td>
-            </tr>
+        <tr>
+            <td>股票代码</td>
+            <td>委托类型</td>
+            <td>委托数量</td>
+            <td>委托价格</td>
+            <td>委托时间</td>
+        </tr>
         </thead>
         {{range .entrusts }}
         <tr>

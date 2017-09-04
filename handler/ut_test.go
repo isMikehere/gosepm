@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"../model"
-	redis "github.com/go-redis/redis"
+	"github.com/go-redis/redis"
 )
 
 func TestConcatStockList(t *testing.T) {
@@ -335,14 +335,14 @@ func TestMd5(t *testing.T) {
 
 func TestFormatRate(t *testing.T) {
 	type args struct {
-		rate float64
+		rate interface{}
 	}
 	tests := []struct {
 		name string
 		args args
 		want string
 	}{
-	// TODO: Add test cases.
+		{name: "test", args: args{rate: "0.555555"}, want: "55%"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

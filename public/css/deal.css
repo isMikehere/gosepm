@@ -707,4 +707,13 @@ body {
     text-align: center;
 }
 
+.chart1 {
+    height: 10rem;
+    width: 10rem;
+}
+
+.chart2 {
+    height: 10rem;
+}
+
 /*# sourceMappingURL=deal.css.map */

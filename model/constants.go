@@ -9,7 +9,6 @@ const (
 	RedisHost = "106.14.112.157:6379"
 	// RedisHost = "localhost:6379"
 	RedisPass = "xceof"
-	HOST = "106.14.112.157"
 )
 
 const (

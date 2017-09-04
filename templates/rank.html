@@ -2,33 +2,33 @@
 <div class="hp-recommend">
     <table class="hp-recommend-table">
         <thead>
-            <tr>
-                <td>排名</td>
-                <td>昵称</td>
-                <td>总收益率</td>
-                <td>周收益率</td>
-                <td>月收益率</td>
-                <td>周冠军次数</td>
-                <td>近30最大收益个股</td>
-                <td>累计订阅量</td>
-                <td>操作</td>
-            </tr>
+        <tr>
+            <td>排名</td>
+            <td>昵称</td>
+            <td>总收益率</td>
+            <td>周收益率</td>
+            <td>月收益率</td>
+            <td>周冠军次数</td>
+            <td>近30最大收益个股</td>
+            <td>累计订阅量</td>
+            <td>操作</td>
+        </tr>
         </thead>
         <tbody>
-            {{range .ranks }}
-            <tr>
-                <td>{{.Rank}}</td>
-                <td>{{.NickName}}</td>
-                <td>{{.EarningRate}}</td>
-                <td>{{.WeekRate}}</td>
-                <td>{{.MonthRate}}</td>
-                <td>{{.WeekXTimes}}</td>
-                <td>{{.StockCode}}</td>
-                <td>{{.TotalFollow}}</td>
-                <td><a class="dy" href="/user/follow/{{.UserId}}">订阅</a></td>
-            </tr>
-            {{end}}
-            </tr>
+        {{range .ranks }}
+        <tr>
+            <td>{{.Rank}}</td>
+            <td>{{.NickName}}</td>
+            <td>{{ FormatRate .EarningRate}}</td>
+            <td>{{ FormatRate .WeekRate}}</td>
+            <td>{{ FormatRate .MonthRate}}</td>
+            <td>{{.WeekXTimes}}</td>
+            <td>{{.StockCode}}</td>
+            <td>{{.TotalFollow}}</td>
+            <td><a class="dy" href="/user/follow/{{.UserId}}">订阅</a></td>
+        </tr>
+        {{end}}
+        </tr>
         </tbody>
     </table>
     {{template "pageable" .}}

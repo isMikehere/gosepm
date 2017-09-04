@@ -8,7 +8,7 @@ import (
 	"../model"
 
 	"github.com/go-macaron/session"
-	redis "github.com/go-redis/redis"
+	"github.com/go-redis/redis"
 	"github.com/go-xorm/xorm"
 	macaron "gopkg.in/macaron.v1"
 )
