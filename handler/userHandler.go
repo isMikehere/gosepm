@@ -221,14 +221,14 @@ func UserAccountHandler(sess session.Store, ctx *macaron.Context, x *xorm.Engine
 	id := 0
 	user := new(model.User)
 	if id, _ = strconv.Atoi(ctx.Params(":id")); id > 0 {
-		ctx.Data["user"] = false
+		ctx.Data["self"] = false
 		if has, _ := x.Id(id).Get(&user); !has {
 			//get the user again
 			ctx.HTML(200, "notfound")
 			return
 		}
 	} else {
-		ctx.Data["user"] = true
+		ctx.Data["self"] = true
 		loginUser := sess.Get("user")
 		v := reflect.ValueOf(loginUser)
 		user = v.Interface().(*model.User)
@@ -236,7 +236,7 @@ func UserAccountHandler(sess session.Store, ctx *macaron.Context, x *xorm.Engine
 	ctx.Data["user"] = user
 
 	userAccount := new(model.UserAccount)
-	//get userAccount
+	//get useraccount
 	if err := x.Where("user_id=?", user.Id).Find(&userAccount); err != nil {
 		//ua
 		ctx.Data["userAccount"] = userAccount
@@ -385,7 +385,7 @@ func SearchXUserHandler(ctx *macaron.Context, x *xorm.Engine) {
 	name := ctx.Params("name")
 	users := make([]*model.User, 0)
 	log.Printf("%s", name)
-	if err := x.Where("nick_name like ?", "%" + name + "%").Limit(5, 0).Find(&users); err == nil {
+	if err := x.Where("nick_name like ?", "%"+name+"%").Limit(5, 0).Find(&users); err == nil {
 		log.Print(users)
 		ctx.JSON(200, users)
 	} else {
@@ -431,5 +431,19 @@ func GetUserById(x interface{}, s *redis.Client, id int64) *model.User {
 	} else {
 		return user
 	}
+
+}
+
+/**
+根据ID获取用户信息
+*/
+func getUserAccountByUserId(x *xorm.Engine, id int64) *model.UserAccount {
+
+	userAccount := new(model.UserAccount)
+	//get useraccount
+	if has, _ := x.Where("user_id=?", id).Get(userAccount); has {
+		return userAccount
+	}
+	return nil
 
 }

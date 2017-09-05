@@ -33,7 +33,7 @@ func MyHoldingHandler(sess session.Store, ctx *macaron.Context, x *xorm.Engine, 
 		_, loginUser := GetSessionUser(sess)
 		if loginUser != nil {
 			if loginUser.Id == int64(uid) {
-				ctx.Data["myself"] = true
+				ctx.Data["self"] = true
 			}
 			ctx.Data["my"] = loginUser
 		}

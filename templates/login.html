@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-  <meta charset="UTF-8">
-  <title>金修网络</title>
-   <script src="/public/js/jquery.js"/></script>
-   <script src="/public/js/rem.js"/></script>
-  <link rel="stylesheet" type="text/css" href="/public/css/common.css" />
-  <link rel="stylesheet" type="text/css" href="/public/css/register.css" />
-  <link rel="stylesheet" type="text/css" href="/public/css/homepage.css" />
-  <link rel="stylesheet" type="text/css" href="/public/css/business.css" />
+	<meta charset="UTF-8">
+	<title>金修网络</title>
+	<script src="/public/js/jquery.js" /></script>
+	<script src="/public/js/rem.js" /></script>
+	<script src="/public/js/common.js" /></script>
+	<link rel="stylesheet" type="text/css" href="/public/css/common.css" />
+	<link rel="stylesheet" type="text/css" href="/public/css/register.css" />
+	<link rel="stylesheet" type="text/css" href="/public/css/homepage.css" />
+	<link rel="stylesheet" type="text/css" href="/public/css/business.css" />
 </head>
 <script>
-	$(function () {
-		$(".btn-login").bind("click", function () {
-
+	var submit = function () {
 			if ($("#user_name").val() == "") {
 				alert("用户名为空")
 				return
@@ -27,11 +27,17 @@
 				return
 			}
 			$("#loginForm").submit()
-		})
-
+		}
+	$(function () {
+		//enter
+		$('.input-code').bind('keydown',function(event){
+			if(event.keyCode == "13") {
+				 submit()
+		}}) ;
+		$(".btn-login").bind("click", submit)
 	})
-
 </script>
+
 <body>
 	<div class="register-cont">
 		<div class="logo-box">
@@ -63,4 +69,5 @@
 		<p>京ICP备14041720号-1京ICP证140622号京公网安备11010502025474</p>
 	</div>
 </body>
+
 </html>

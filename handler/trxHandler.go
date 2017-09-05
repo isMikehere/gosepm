@@ -7,20 +7,40 @@ import (
 
 	"time"
 
+	"log"
+
 	"../model"
-	redis "github.com/go-redis/redis"
+	"github.com/go-macaron/session"
 	"github.com/go-xorm/xorm"
 	"gopkg.in/macaron.v1"
 )
 
-func TrxHandler(ctx *macaron.Context) {
+/**
+跳转交易
+*/
+func TrxHandler(ctx *macaron.Context, sess session.Store, x *xorm.Engine) {
+
+	_, user := GetSessionUser(sess)
+
+	userAccount := getUserAccountByUserId(x, user.Id)
+	log.Printf("%s", userAccount)
+	ctx.Data["ua"] = userAccount
+	// query the entrust data list of today
+
+	today := time.Now().Format(model.DATE_FORMAT)
+	entrustList := make([]*model.StockEntrust, 0)
+	if err := x.Where("user_id=?", user.Id).
+		And("date_format(entrust_time,'%Y-%m-%d') = ?", today).
+		Desc("id").Find(&entrustList); err == nil {
+		ctx.Data["entrustList"] = entrustList
+	}
 	ctx.HTML(200, "deal")
 }
 
 /**
 交易成功率比数据
 **/
-func TrxRateDataChartHander(ctx *macaron.Context, r *redis.Client, x *xorm.Engine) {
+func TrxRateDataChartHander(ctx *macaron.Context, x *xorm.Engine) {
 
 	jr := new(model.JsonResult)
 	uid := ctx.Params(":uid")
@@ -33,7 +53,7 @@ func TrxRateDataChartHander(ctx *macaron.Context, r *redis.Client, x *xorm.Engin
 	data1 := new(Data)
 	data2 := new(Data)
 
-	if has, _ := x.Where("user_id=?", uid).Get(&ua); has {
+	if has, _ := x.Where("user_id=?", uid).Get(ua); has {
 
 		data1.Name = "盈利笔数"
 		data1.Value = ua.SuccessTimes

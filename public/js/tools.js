@@ -33,7 +33,7 @@ function customDivide(val, base) {
  * @param base
  * @returns {*}
  */
-function customerMultiply(val, base) {
+function customerMultiply(val, base, toFixed) {
 
 
     if (val == undefined || val == '' || val == 0 || val == null) {
@@ -47,7 +47,7 @@ function customerMultiply(val, base) {
     try {
         val = parseFloat(val);
         base = parseFloat(base);
-        return (val * base).toFixed(2);
+        return (val * base).toFixed(parseInt(toFixed));
     } catch (e) {
         console.error("error:%s", e)
         return "--";
@@ -60,7 +60,7 @@ function customerMultiply(val, base) {
  * @param val1
  * @param val2
  */
-function customerAdd(val1, val2, op) {
+function customerAdd(val1, val2, op, toFixed) {
 
     if (val1 == undefined || val1 == '' || val1 == null) {
         return '--';
@@ -75,9 +75,7 @@ function customerAdd(val1, val2, op) {
     }
 
     var ret = parseFloat(val1) + parseFloat(op) * parseFloat(val2);
-    console.log(ret)
-
-    return ret.toFixed(2);
+    return ret.toFixed(toFixed);
 }
 
 
@@ -98,9 +96,40 @@ function exPriceCal(val, op) {
     return customerMultiply(parseFloat(val), 1 + parseFloat(op));
 }
 
+/**
+ *
+ * 计算可买的 （手）
+ * @param ava 可以金额
+ * @param cp 当前价格
+ */
+function calcAvq(ava, cp, toFixed) {
+    if (ava == undefined || ava == '' || ava == 0 || ava == null) {
+        return 0;
+    }
+    if (cp == undefined || cp == '' || cp == 0 || cp == null) {
+        return '-';
+    }
+    return (parseInt(ava) / parseInt(customerMultiply(cp, 100))).toFixed(toFixed)
+}
 
+/**
+ * 
+ * 格式化单位:
+ * @param {*} val  100
+ * @param {*} op 0:转化成手 ，1:转化成股
+ * 
+ * 1000,0: 10
+ */
+function formatHand(val, op) {
 
-
-
-
-
+    if (val == undefined || val == '' || val == null) {
+        return 0;
+    }
+    var x = parseInt(val);
+    if (x % 100 != 0) {
+         var d = Math.round(x/100)*100
+         return d;
+    }else{
+        return x;
+    }
+}
