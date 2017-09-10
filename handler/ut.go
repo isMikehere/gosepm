@@ -52,7 +52,7 @@ func FormatRate(rate interface{}) string {
 			if d, err := decimal.NewFromString(t); err == nil {
 				return fmt.Sprintf("%s%s", d.Mul(decimal.New(100, 0)).StringFixed(2), "%")
 			}
-			return "";
+			return ""
 
 		}
 	case float32:
@@ -263,7 +263,7 @@ func ConcatStockList(stockList interface{}) string {
 				buffer.WriteString(AddExcToStockCode(t[0].StockCode))
 			} else {
 				for i, v := range t {
-					if i < len - 1 {
+					if i < len-1 {
 						buffer.WriteString(AddExcToStockCode(v.StockCode) + ",")
 					} else {
 						buffer.WriteString(AddExcToStockCode(v.StockCode))
@@ -279,7 +279,7 @@ func ConcatStockList(stockList interface{}) string {
 				buffer.WriteString(AddExcToStockCode(t[0].StockCode))
 			} else {
 				for i, v := range t {
-					if i < len - 1 {
+					if i < len-1 {
 						buffer.WriteString(AddExcToStockCode(v.StockCode) + ",")
 					} else {
 						buffer.WriteString(AddExcToStockCode(v.StockCode))
@@ -294,7 +294,7 @@ func ConcatStockList(stockList interface{}) string {
 				buffer.WriteString(t[0].StockCode)
 			} else {
 				for i, v := range t {
-					if i < len - 1 {
+					if i < len-1 {
 						buffer.WriteString(v.StockCode + ",")
 					} else {
 						buffer.WriteString(v.StockCode)
@@ -309,7 +309,7 @@ func ConcatStockList(stockList interface{}) string {
 				buffer.WriteString(t[0])
 			} else {
 				for i, v := range t {
-					if i < len - 1 {
+					if i < len-1 {
 						buffer.WriteString(v + ",")
 					} else {
 						buffer.WriteString(v)
@@ -345,11 +345,11 @@ func OrderSnGenerator(redisCli *redis.Client) string {
 	var lock = "order_sn_lock"
 	t := time.Now().Format(model.DATE_ORDER_FORMAT)
 	for {
-		if f, _ := redisCli.SetNX(lock, "lock", 3 * time.Second).Result(); f {
+		if f, _ := redisCli.SetNX(lock, "lock", 3*time.Second).Result(); f {
 			s, _ := redisCli.Get("order_sn").Result()
 			if s == "" {
 				s = "0001"
-				redisCli.Set("order_sn", s, 24 * time.Hour)
+				redisCli.Set("order_sn", s, 24*time.Hour)
 				redisCli.Del(lock)
 				return t + s
 			} else {
@@ -357,7 +357,7 @@ func OrderSnGenerator(redisCli *redis.Client) string {
 				i++
 				d := formateSn(strconv.Itoa(i))
 				fmt.Print("%s", d)
-				redisCli.Set("order_sn", d, 24 * time.Hour)
+				redisCli.Set("order_sn", d, 24*time.Hour)
 				redisCli.Del(lock)
 				return t + d
 			}
@@ -674,5 +674,15 @@ func checkInService() bool {
 }
 
 func GenerateRandomChar() {
+}
 
+/**
+@return time.time format of yeterday
+**/
+func Yesterday() time.Time {
+	return time.Now().AddDate(0, 0, -1)
+}
+
+func FormatInt() string {
+	return strconv.FormatInt(30, 10)
 }

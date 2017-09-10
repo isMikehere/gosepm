@@ -24,9 +24,7 @@ import (
 //登录跳转
 func LoginGetHandler(sess session.Store, ctx *macaron.Context, x *xorm.Engine) {
 
-	if sess.Get("user") != nil {
-		user := sess.Get("user").(*model.User)
-		ctx.Data["user"] = user
+	if has, _ := GetSessionUser(sess); has {
 		ctx.HTML(200, "index")
 	} else {
 		ctx.HTML(200, "login")
@@ -36,12 +34,10 @@ func LoginGetHandler(sess session.Store, ctx *macaron.Context, x *xorm.Engine) {
 //登录
 func LoginPostHandler(user model.User, sess session.Store, ctx *macaron.Context, x *xorm.Engine, r *redis.Client, cpt *captcha.Captcha) {
 	//验证码验证
-
 	if !cpt.VerifyReq(ctx.Req) {
 		ctx.Data["msg"] = "验证码错误"
 		ctx.HTML(200, "login")
 	}
-
 	//登录
 	hash := md5.New()
 	hash.Write([]byte(user.Password)) // 需要加密的字符串为 123456
@@ -377,20 +373,26 @@ func listMyFollowers(s *xorm.Session, followedId int64) (bool, []*model.UserFoll
 		return false, nil
 	}
 }
+func SearchDefault(ctx *macaron.Context, x *xorm.Engine) {
+
+	users := make([]string, 0)
+	if err := x.SQL("select user_name from user").Find(&users); err != nil {
+		log.Printf("query error:%s", err)
+	}
+	ctx.JSON(200, users)
+}
 
 /**
 查找高手
 **/
 func SearchXUserHandler(ctx *macaron.Context, x *xorm.Engine) {
 	name := ctx.Params("name")
-	users := make([]*model.User, 0)
+	users := make([]string, 0)
 	log.Printf("%s", name)
-	if err := x.Where("nick_name like ?", "%"+name+"%").Limit(5, 0).Find(&users); err == nil {
-		log.Print(users)
-		ctx.JSON(200, users)
-	} else {
-		ctx.JSON(200, nil)
+	if err := x.SQL("select user_name from user where user_name like ?", name+"%").Limit(5, 0).Find(&users); err != nil {
+		log.Printf("query error:%s", err)
 	}
+	ctx.JSON(200, users)
 }
 
 /**

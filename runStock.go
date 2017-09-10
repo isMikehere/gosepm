@@ -204,12 +204,12 @@ func webgo() {
 			"GetUserNickName": handler.GetUserNickName,
 			"FormatDate":      handler.FormatDate,
 			"FormatDateTime":  handler.FormatDateTime,
-			"StockValue":      handler.StockValue, //股票市值
+			"StockValue":      handler.StockValue,    //股票市值
 			"MaskStockCode":   handler.MaskStockCode, //股票掩码
-			"StockDetail":     handler.StockDetail, //股票具体某字段值
-			"FloatEarning":    handler.FloatEarning, //股票具体某字段值
-			"EarningRate":     handler.EarningRate, //股票具体某字段值
-			"FormatRate":      handler.FormatRate, //格式化比率0.xx->xx%
+			"StockDetail":     handler.StockDetail,   //股票具体某字段值
+			"FloatEarning":    handler.FloatEarning,  //股票具体某字段值
+			"EarningRate":     handler.EarningRate,   //股票具体某字段值
+			"FormatRate":      handler.FormatRate,    //格式化比率0.xx->xx%
 			"Mul100": func(num int32) int32 {
 				return num * 100
 			},
@@ -256,6 +256,7 @@ func webgo() {
 		if u != nil {
 			login = true
 			ctx.Data["user"] = u
+			log.Printf("login :%s", u)
 		}
 		ctx.Data["login"] = login
 		ctx.Data["webpath"] = ctx.Req.Host
@@ -268,8 +269,8 @@ func webgo() {
 			if strings.Contains(url, "/login") ||
 				strings.Contains(url, "/register.htm") ||
 				strings.Contains(url, "/mobileCode/") ||
-				strings.Contains(url, "index.htm") ||
-				strings.Contains(url, "/header.htm") ||
+				strings.Contains(url, "/index.htm") ||
+				strings.Contains(url, ".json") ||
 				strings.Contains(url, "/tail.htm") ||
 				strings.Contains(url, ".js") ||
 				strings.Contains(url, ".css") {
@@ -309,6 +310,7 @@ func webgo() {
 		m.Put("/update/:id", binding.Bind(model.User{}), handler.UserUpdateSaveHandler)
 		m.Post("/update/:id", binding.Bind(model.User{}), handler.UserUpdateSaveHandler)
 		m.Get("/search/:name", handler.SearchXUserHandler)
+		m.Get("/searchxDefault.json", handler.SearchDefault)
 		//我的
 		m.Get("/account/:id", handler.UserAccountHandler)
 
@@ -360,7 +362,7 @@ func webgo() {
 	})
 	//支付相关
 	if macaron.Env == macaron.DEV {
-		m.Get("/pay/:payType/:orderId", handler.TestPayHandler)
+		m.Get("/pay/:payType/:orderId", handler.DevPayHandler)
 	} else {
 		m.Post("/pay/:payType/:orderId", handler.AlipayNotifyHandler)
 	}

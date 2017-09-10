@@ -19,16 +19,20 @@ import (
 func FollowStep1Handler(sess session.Store, ctx *macaron.Context, x *xorm.Engine, log *log.Logger) {
 	//获取要订阅的人的ID
 	userId := ctx.Params(":id")
-	fmt.Printf("-----userId:%s", userId)
+	fmt.Printf("订阅第一步、被订阅ID:%s", userId)
+	if _, sessionUser := GetSessionUser(sess); strconv.FormatInt(sessionUser.Id, 10) == userId {
+		ctx.Data["msg"] = "不能订阅自己"
+		ctx.HTML(200, "error")
+		return
+	}
+
 	u := new(model.User)
 	if has, _ := x.Id(userId).Get(u); has {
 		//获取有效的上线产品
 		products := ListOnlineProducts(x, log)
 		//获取当前用户信息
-		_, u := GetSessionUser(sess)
 		ctx.Data["user2Follow"] = u
 		ctx.Data["products"] = products
-		ctx.Data["i"] = u
 		//生成token
 		token := RandomStringCode(16)
 		sess.Set("orderToken", token)
@@ -47,6 +51,7 @@ func FollowStep1Handler(sess session.Store, ctx *macaron.Context, x *xorm.Engine
  @param user2Follow:待订阅人
 **/
 func preCheckToFollow(i *model.User, user2Follow *model.User) (bool, string) {
+
 	return true, "ok"
 }
 
@@ -88,17 +93,14 @@ func FollowStep2Handler(sess session.Store, ctx *macaron.Context, x *xorm.Engine
 	if has, _ := x.Id(userId).Get(followedUser); has {
 		//获取有效的上线产品
 		Type := ctx.Params(":type")
-		fmt.Printf("%s", Type)
+		fmt.Printf("订阅第二步:%d,%s", userId, Type)
 		typeInt, _ := strconv.Atoi(Type)
 		product := new(model.Product)
 		if has, _ := x.Where("types=?", typeInt).And("is_online=?", 1).Get(product); has {
-			fmt.Printf("OK")
 			//获取当前用户信息
 			i := sess.Get("user").(*model.User)
 			//订阅前检查
 			if canFollow, errMsg := preCheckToFollow(i, followedUser); canFollow {
-				//重复提交
-
 				ctx.Data["product"] = product
 				if ok, order := GenerateOrder(x, redisCli, typeInt, i.Id, followedUser.Id); ok {
 					ctx.Data["ok"] = ok
@@ -115,7 +117,6 @@ func FollowStep2Handler(sess session.Store, ctx *macaron.Context, x *xorm.Engine
 				ctx.HTML(200, "error")
 			}
 		} else {
-			log.Printf("没有产品%d", typeInt)
 			ctx.Data["msg"] = "没有找到对应的订阅产品"
 			ctx.HTML(200, "error")
 		}

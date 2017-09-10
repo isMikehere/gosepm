@@ -93,60 +93,7 @@ body {
   padding: 0;
   margin-top: 0.75rem;
 }
-.homepage-search {
-  overflow: hidden;
-  height: 5.9rem;
-  line-height: 5.9rem;
-}
-.homepage-search .homepage-sch-logo {
-  overflow: hidden;
-  display: inline-block;
-}
-.homepage-search .homepage-sch-logo img,
-.homepage-search .homepage-sch-logo p {
-  float: left;
-}
-.homepage-search .homepage-sch-logo img {
-  width: 15rem;
-  padding: 1rem;
-  margin-left: 4.25rem;
-}
-.homepage-search .homepage-sch-logo p {
-  font-size: 1.2rem;
-  color: #888888;
-  letter-spacing: 0;
-}
-.homepage-search .homepage-sch-sch {
-  line-height: 2rem;
-  display: inline-block;
-  float: right;
-  margin-right: 4.8rem;
-  overflow: hidden;
-  margin-top: 2rem;
-  position: relative;
-}
-.homepage-search .homepage-sch-sch input {
-  background: rgba(255, 255, 255, 0.2);
-  border: 0.05rem solid #BBBBBB;
-  width: 21rem;
-  height: 1.9rem;
-  float: right;
-  text-indent: 50px;
-}
-.homepage-search .homepage-sch-sch span {
-  width: 4.55rem;
-  text-align: center;
-  background: #B93A2B;
-  font-size: 0.8rem;
-  color: #FFFFFF;
-  letter-spacing: 0;
-  float: right;
-}
-.homepage-search .homepage-sch-sch img {
-  margin-left: 1rem;
-  position: absolute;
-  margin-top: 0.5rem;
-}
+
 .homepage-bigbacg {
   width: 62.5rem;
   margin: auto;
@@ -284,4 +231,14 @@ body {
   display: inline-block;
   text-align: center;
 }
+
+
+.error {
+  margin-top:2%;
+}
+
+.error .span{
+  padding-left: 50%;
+}
+
 /*# sourceMappingURL=common.css.map */

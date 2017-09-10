@@ -356,7 +356,7 @@ func WxNotifyHandler(ctx *macaron.Context, x *xorm.Engine, log *log.Logger) (int
 }
 
 //测试支付路由
-func TestPayHandler(ctx *macaron.Context, x *xorm.Engine, r *redis.Client) {
+func DevPayHandler(ctx *macaron.Context, x *xorm.Engine, r *redis.Client) {
 
 	orderId, _ := strconv.Atoi(ctx.Params(":orderId"))
 	payType := ctx.Params(":payType")

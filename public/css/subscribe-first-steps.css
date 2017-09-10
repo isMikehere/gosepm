@@ -258,12 +258,19 @@ body {
   line-height: 2.2rem;
   display: inline-block;
   background: #FFFFFF;
-  border: 1px solid #BBBBBB;
+  /* border: 1px solid #BBBBBB; */
   overflow: hidden;
   position: relative;
   top: 50%;
   transform: translate(0, -50%);
 }
+
+.people-name .list-time .product-type {
+  width: 90%;
+  height: 82%;
+}
+
+
 .people-name .list-time span {
   float: left;
   margin-left: 0.875rem;

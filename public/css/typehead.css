@@ -20,7 +20,7 @@
  }
  .has-error .twitter-typeahead .tt-input,
  .has-error .twitter-typeahead .tt-hint {
-   border-color: #a94442;
+   /* border-color: #a94442; */
    -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
  }

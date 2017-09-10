@@ -26,13 +26,21 @@ func TrxHandler(ctx *macaron.Context, sess session.Store, x *xorm.Engine) {
 	log.Printf("%s", userAccount)
 	ctx.Data["ua"] = userAccount
 	// query the entrust data list of today
-
 	today := time.Now().Format(model.DATE_FORMAT)
+	yesterday := Yesterday().Format(model.DATE_FORMAT)
 	entrustList := make([]*model.StockEntrust, 0)
 	if err := x.Where("user_id=?", user.Id).
 		And("date_format(entrust_time,'%Y-%m-%d') = ?", today).
 		Desc("id").Find(&entrustList); err == nil {
 		ctx.Data["entrustList"] = entrustList
+	}
+	//holding stocks that bought before today
+	holdinigs := make([]*model.StockHolding, 0)
+
+	if err := x.SQL("select stock_code,sum(available_number) available_number from stock_holding "+
+		" where user_id= ? and holding_status=? and date_format(trans_time,'%Y-%m-%d') <=? group by stock_code", user.Id, 1, yesterday).Find(&holdinigs); err == nil {
+		log.Printf("holdings=>:%s", holdinigs)
+		ctx.Data["stockHoldings"] = holdinigs
 	}
 	ctx.HTML(200, "deal")
 }

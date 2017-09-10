@@ -1,5 +1,6 @@
 {{template "header" .}}
-{{template "nav" .}}
+<link rel="stylesheet" type="text/css" href="/public/css/subscribe-first-steps.css" />
+
 <script>
 
   $(function(){
@@ -8,7 +9,7 @@
        var url=$("#webpath").val()+"/product/"+$("#productType :selected").val()
         $.get(url,function(data){
             if (data.code == "200"){
-                $("#price").html(data.data.Price)
+                $("#price").html(data.data.Price+"(元)")
             }else{
               $("#price").html("--")
             }
@@ -16,10 +17,13 @@
   });
 
   //提交订单 
-$("#buy").bind("click",function(){
+$(".put-in").bind("click",function(){
     if ($("#productType").val() != -1){
-        var url=$("#webpath").val()+"/user/follow/{{.i.Id}}/"+$("#productType").val()+"/"+$("#orderToken").val()
+        var url=$("#webpath").val()+"/user/follow/{{.user.Id}}/"+$("#productType").val()+"/"+$("#orderToken").val()
         window.location.href=url
+    }else{
+        alert('请选择一款订阅产品!')
+        return
     }
   })})
 
@@ -27,44 +31,53 @@ $("#buy").bind("click",function(){
 <input id="webpath" type="hidden" value="http://{{.webpath}}">
 <input id="orderToken" type="hidden" value="{{.orderToken}}">
     
-    <div id="body">
-        <div class="step"></div>
-        <div class="products">
-
-            <table>
-                <thead>
-                    <tr>
-                        <td>昵称 <td>
-                        <td>订阅类型 <td>
-                        <td>金额<td>
-                        <td>操作<td>
-                    </tr>
-                </thead>
-                <tbody>
-     <tr>
-        <td>{{.user2Follow.NickName}} <td>
-        <td>
-            <select id="productType" >
-                 <option value="-1">选择类型</option>
-                {{ range .products}}
-                <option value="{{.Types}}">{{.Name}}</option>
-                {{end}}
-            </select> 
-            <td>
-        <td>
-             <span id="price"></span>
-         <td>
-        <td>
-            <input id="buy" type="button" value="确认下单">
-            
-                </tr>
-            </tbody>
-            </table>
+<div class="subscribe-container">
+    <div class="subscribe-steps">
+        <div class="steps-refer-box first-refer steps-refer-active">
+            <div class="steps-circle"></div>
+            <div class="steps-pay steps-refer">第一步：提交订单</div>
         </div>
-    <div>
-     请仔细阅读订阅协议： <input type="checkbox" id="readContract" >
-
+        <div class="steps-refer-box  second-pay">
+            <div class="steps-circle"></div>
+            <div class="steps-pay steps-refer">第二步：订单支付</div>
+        </div>
+        <div class="steps-refer-box  third-complete">
+            <div class="steps-circle"></div>
+            <div class="steps-complete steps-refer">第三步：完成订单</div>
+        </div>
     </div>
+</div>
+<div class="subscription-list">
+    <div class="container-big">
+        <div class="subscription-list-title">订阅列表</div>
+        <div class="container-first">
+            <div class="list">
+                <span>昵称</span>
+                <span>订阅类型</span>
+                <span>金额</span>
+                <span>操作</span>
+            </div>
+            <div class="people-name">
+                <span class="specific">{{.user2Follow.NickName}} </span>
+                <div class="list-time specific">
+                    <!-- <span>周</span>
+                    <img src="/public/img/info3.png" /> -->
+                    <select id="productType"  class="product-type">
+                        <option value="-1">选择类型</option>
+                       {{ range .products}}
+                       <option value="{{.Types}}">{{.Name}}</option>
+                       {{end}}
+                   </select> 
+                </div>
+                <span class="specific nub-color" id='price'>--</span>
+                <div class="specific">
+                    <span class="subscription-button">订阅</span>
+                </div>
+            </div>
 
+        </div>
+        <p class="subscription-protocol">订阅后只可以更改一次订阅的高手，请您确认订单信息。提交订单表示已阅读并同意《*********订阅服务协议》。  <input type="checkbox" id="readContract" ></p>
+        <button type="button" class="put-in" >提交订单</button>
     </div>
+</div>
  {{template "tail"}}

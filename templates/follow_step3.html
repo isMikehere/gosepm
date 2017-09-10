@@ -1,8 +1,15 @@
-{{template "header"}}
-{{template "nav"}}
-    <div id="body">
+{{template "header" .}}
+<link rel="stylesheet" type="text/css" href="/public/css/subscribe-third-steps.css" />
 
-      {{.msg}}
-
+<div class="subscription-list">
+  <div class="subscription-yes">
+    <div class="congratulate-img">
+      <img src="/public/img/yes.png" />
     </div>
- {{template "tail"}}
+    <div class="congratulate-total">
+      <div class="congratulate-first">恭喜您订阅成功！</div>
+      <div class="congratulate-second">请到我的订阅中查看</div>
+    </div>
+  </div>
+</div>
+{{template "tail"}}

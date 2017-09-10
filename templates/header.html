@@ -6,15 +6,21 @@
     <script src="/public/js/jquery.js"></script>
     <script src="/public/js/rem.js"></script>
     <script src="/public/js/tools.js"></script>
+    <!-- autocomplete  -->
+    <script type="text/javascript" src="/public/js/bloodhound.min.js"></script>
+    <script type="text/javascript" src="/public/js/typeahead.bundle.min.js"></script>
+    <script type="text/javascript" src="/public/js/typeahead.jquery.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="/public/css/typehead.css">
+    <!-- autocomplete  -->
+
     <link rel="stylesheet" type="text/css" href="/public/css/common.css"/>
-    <link rel="stylesheet" type="text/css" href="/public/css/register.css"/>
     <link rel="stylesheet" type="text/css" href="/public/css/homepage.css"/>
-    <link rel="stylesheet" type="text/css" href="/public/css/business.css"/>
-    <link rel="stylesheet" type="text/css" href="/public/css/deal.css"/>
 
 </head>
 
 <body>
+  <input id="webpath" type="hidden" value="http://{{.webpath}}">
+
 <div class="homepage-header">
     <div class="homepage-hd-help">
         <span>帮助</span>
@@ -36,7 +42,7 @@
     </div>
     <div class="homepage-sch-sch">
         <span>高手搜索</span>
-        <input type="text" name="" id="" value=""/>
+        <input class="typeahead" type="text" placeholder="">
         <img src="/public/img/Search.png"/>
     </div>
 </div>
@@ -81,4 +87,23 @@
         <div>APP</div>
     </div>
 </div>
-<input id="webpath" type="hidden" value="http://{{.webpath}}">
+<script>
+            // find autocomplete
+            // var  xUsers = new Bloodhound({
+            //     datumTokenizer: Bloodhound.tokenizers.whitespace,
+            //     queryTokenizer: Bloodhound.tokenizers.whitespace,
+            //     // prefetch:'/user/searchxDefault.json',  
+            //     remote: {
+            //         url: '/user/search/%QUERY.json',
+            //         wildcard: '%QUERY'
+            //     }
+            // });
+            // $('.homepage-sch-sch .typeahead').typeahead(null, {
+            //     name: 'xUsers',
+            //     display:'value',
+            //     source: xUsers
+            // });
+
+
+
+</script>

@@ -1,20 +1,23 @@
 {{template "header" .}}
-<link rel="stylesheet" type="text/css" href="/public/css/typehead.css">
-<script type="text/javascript" src="/public/js/bloodhound.min.js"></script>
-<script type="text/javascript" src="/public/js/typeahead.bundle.min.js"></script>
-<script type="text/javascript" src="/public/js/typeahead.jquery.min.js"></script>
+<link rel="stylesheet" type="text/css" href="/public/css/deal.css" />
+
 <script>
     $(document).ready(
         function () {
             // init
             (function () {
                 console.log('init...');
+                console.log("code:"+localStorage.lastStock)
+                $("#stockCode").val( localStorage.lastStock)
                 $("span[id^='v-']").html("--")
             }());
 
             //定时刷新
             self.setInterval(function () {
                 var code = $("#stockCode").val()
+               if(code != localStorage.lastStock){
+                 localStorage.lastStock = code;
+               } 
                 if (code != "") {
                     var url = $("#webpath").val() + "/stock/" + code
                     $.getJSON(url, function (data) {
@@ -31,14 +34,11 @@
                             $("#v-highPrice").html(arr[4]);
                             $("#v-lowPrice").html(arr[5]);
 
-
                             $("#v-float").html(customerAdd(arr[3], arr[1], -1,2)); //涨幅
                             $("#v-floatRate").html(customDivide(customerAdd(arr[3], arr[1], -1), arr[3])); //涨幅比率
 
-
                             $("#v-dealQuantity").html(customDivide(arr[8], 100) + "手");
                             $("#v-dealAmount").html(customDivide(arr[9], 10000) + "万");
-
 
                             $("#v-buyQuantity-1").html(customDivide(arr[10], 100));
                             $("#v-buyPrice-1").html(arr[11]);
@@ -67,9 +67,22 @@
 
                             $("#cp").val(arr[3]);
 
-                            //可以购买数量
-                            var ava = $("#availableAmount").val();
-                            $("#buy-span").html(customerMultiply(calcAvq(ava, arr[3],),100,0));
+                            if ($(".click").html() == '卖出') {
+                                var stockCode = $("#stockCode").val().replace('sz','').replace('sh','');
+                                var availableAmount = $("#"+stockCode).val();
+                                if(availableAmount != undefined ){
+                                    $("#buy-span").html(availableAmount);
+                                    var percent = $(".buy-click").siblings().get(0).getAttribute("data");
+                                    $("#quantity").val(customerMultiply(availableAmount,percent,0))
+                                }
+                            }else{
+                                //可以购买数量
+                                var ava = $("#availableAmount").val();
+                                var buyspan = customerMultiply(calcAvq(ava, arr[3],),100,0);
+                                $("#buy-span").html(buyspan);
+                                var percent = $(".buy-click").siblings().get(0).getAttribute("data");
+                                $("#quantity").val(customerMultiply(buyspan,percent,0))
+                            }
                         }
                     }
                     )
@@ -81,6 +94,21 @@
                 if (!$(this).is('click')) {
                     $(".click").removeClass('click');
                     $(this).addClass('click')
+                    if($(".click").html()=='卖出'){
+                        var stockCode = $("#stockCode").val().replace('sz','').replace('sh','');
+                        var availableAmount = $("#"+stockCode).val();
+                        if(availableAmount != undefined ){
+                            $("#buy-span").html(availableAmount);
+                            var percent = $(".buy-click").siblings().get(0).getAttribute("data");
+                            $("#quantity").val(customerMultiply(availableAmount,percent,0))
+                        }
+                    }else{
+                                var ava = $("#availableAmount").val();
+                                var buyspan = customerMultiply(calcAvq(ava, $("#cp").val(),),100,0);
+                                $("#buy-span").html(buyspan);
+                                var percent = $(".buy-click").siblings().get(0).getAttribute("data");
+                                $("#quantity").val(customerMultiply(buyspan,percent,0))
+                    }
                 }
             });
 
@@ -92,7 +120,6 @@
                     alert("购买数量为100的整数倍!")
                     return
                 }
-
                 var quantity = $("#quantity").val();
                 var buyPrice = $("#buyPrice").val();
                 var stockCode = $("#stockCode").val();
@@ -120,6 +147,10 @@
             });
             //绑定选项卡事件
             $(".percent").bind("click",function(){
+               //修改样式
+                $(".buy-click").removeClass("buy-click");
+                $($(this).get(0).firstElementChild).addClass("buy-click");
+                //更新购买的数量
                 var percent = $(this).get(0).lastElementChild.getAttribute("data")
                 var ava = $("#buy-span").html();
                 $("#quantity").val(customerMultiply(ava,percent,0))
@@ -140,8 +171,15 @@
 
 </script>
 
+
 <div class="container">
+        {{range .stockHoldings}}
+        <tr>
+            <input type="hidden" id="{{.StockCode}}" value="{{.AvailableNumber}}" />
+        </tr>
+        {{end}}
     <input type="hidden" id="availableAmount" value="{{.ua.AvailableAmount}}" />
+    <input type="hidden" id="cp" />
 
     <div class="left-cont">
         <div class="left-first">
@@ -167,11 +205,12 @@
             <div class="business">卖出</div>
             <input type="hidden" id="trxType" value="1">
         </div>
-        <div class="deal-buy">
+        <div class="deal-buy deal">
             <div class="buy deal-list">股票代码：<input class="typeahead deal-buy-input" id="stockCode" name="stockCode" type="text" placeholder="股票代码"></div>
             <div class="deal-list">委托价格：<input class="deal-buy-input" id="buyPrice" placeholder="委托价格" /><span class="buy-span"></span></div>
-            <div class="deal-list">当前可买：<span class="buy-span" id="buy-span">0</span></div>
-            <div class="deal-list">购买数量：<input id="quantity" class="deal-buy-input" name="quantity" placeholder="购买数量" value="" /> <span class="buy-span"></span></div>
+            <div class="deal-list">可以交易：<span class="buy-span" id="buy-span">0</span></div>
+            <div class="deal-list">可用金额：<span class="buy-span">{{.ua.AvailableAmount}}(元)</span></div>
+            <div class="deal-list">交易数量：<input id="quantity" class="deal-buy-input" name="quantity" placeholder="购买数量" value="" /> <span class="buy-span"></span></div>
             <div class="buy-choice">
                 <div class="percent">
                     <div class="buy-click"></div>
@@ -195,7 +234,7 @@
                 </div>
             </div>
             <div class="deal-buy-money">
-                <span>购买金额：</span>
+                <span>交易金额：</span>
                 <span id="buyMoney"></span>
             </div>
             <div class="deal-buy-btn">委托交易</div>
