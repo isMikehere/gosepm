@@ -390,7 +390,7 @@ func webgo() {
 	m.Group("/pay", func() {
 		m.Post("/:payType/:orderId", handler.Pay)
 		m.Get("/:payType/:orderId", handler.Pay)
-		m.Post("/alipay/finish", handler.AlipayNotifyHandler)
+		m.Post("/alipay/finish", handler.AlipayFinishHandler)
 		m.Post("/alipay/notify", handler.AlipayNotifyHandler)
 	})
 

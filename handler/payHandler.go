@@ -73,16 +73,34 @@ func AlipaySubmitOrder(ctx *macaron.Context, x *xorm.Engine, client alipay.Clien
 }
 
 /*
-
- */
-func AlipayNotifyHandler(ctx *macaron.Context, x *xorm.Engine, r *redis.Client, client alipay.Client) {
+AlipayFinishHandler sync callback
+*/
+func AlipayFinishHandler(ctx *macaron.Context, x *xorm.Engine, r *redis.Client, client alipay.Client) string {
 	result := client.NativeReturn(ctx.Req.Request)
 	fmt.Println("alipay result:", result)
 	if result.Status == 1 { //付款成功，处理订单
 		//处理订单
 		OrderPayed(x.NewSession(), r, result.OrderNo, model.AliPay)
+		return "ok"
 	} else {
 		//TODO:fail to pay
+		return "fail"
+	}
+}
+
+/*
+AlipayNotifyHandler async callback
+*/
+func AlipayNotifyHandler(ctx *macaron.Context, x *xorm.Engine, r *redis.Client, client alipay.Client) string {
+	result := client.NativeNotify(ctx.Req.Request)
+	fmt.Println("alipay result:", result)
+	if result.Status == 1 { //付款成功，处理订单
+		//处理订单
+		OrderPayed(x.NewSession(), r, result.OrderNo, model.AliPay)
+		return "ok"
+	} else {
+		//TODO:fail to pay
+		return "fail"
 	}
 }
 
