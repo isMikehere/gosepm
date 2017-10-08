@@ -271,11 +271,21 @@ func webgo() {
 		//check login status
 		u := sess.Get("user")
 		login := false
+		//dev
+		if macaron.Env == macaron.DEV {
+			u = new(model.User)
+			x.ID(1).Get(u)
+			sess.Set("user", u)
+			login = true
+			fmt.Printf("dev-user:%s", u)
+		}
+
 		if u != nil {
 			login = true
 			ctx.Data["user"] = u
 			log.Printf("login :%s", u)
 		}
+
 		ctx.Data["login"] = login
 		ctx.Data["webpath"] = ctx.Req.Host
 		log.Printf("webpath:%s", ctx.Req.Host)
