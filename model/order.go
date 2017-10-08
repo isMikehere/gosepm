@@ -9,11 +9,6 @@ const (
 	ORDER_STATUS_REFUNDED
 )
 
-const (
-	ALIPAY string = "alipay"
-	WXPAY  string = "weixin"
-)
-
 /**
 订单表
 **/

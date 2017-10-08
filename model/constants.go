@@ -146,11 +146,15 @@ const (
 //支付相关
 //alipay
 const (
-	PID       = "111"
-	AliKey    = "111"
-	ReturnURL = "http://host_port/alipay/finish"
-	NotifyURL = "http://host_port/alipay/notify"
-	Email     = "tanguowu22@aliyun.com"
+	AliPay    = "alipay"
+	PID       = "2088721921014090"
+	AliKey    = "rw2si4ejhwhw4nymm2fnvhlg34gtaxk5"
+	ReturnURL = "http://www.goldgad.com/pay/alipay/finish"
+	NotifyURL = "http://www.goldgad.com/pay/alipay/notify"
+	Email     = "jinxiuwl@aliyun.com"
 )
 
 //wxpay
+const (
+	WXPAY = "wxpay"
+)

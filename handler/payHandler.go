@@ -3,12 +3,13 @@ package handler
 import (
 	"encoding/xml"
 	"fmt"
+	"html/template"
 	"log"
-	"regexp"
 	"strings"
 	"time"
 
 	"github.com/ascoders/alipay"
+	"github.com/go-macaron/session"
 
 	"../model"
 
@@ -20,21 +21,69 @@ import (
 	macaron "gopkg.in/macaron.v1"
 )
 
-//
-// ************************AliPay************************
-//
+/*
+Pay rouater
+*/
+func Pay(ctx *macaron.Context, x *xorm.Engine, sess session.Store, client alipay.Client) {
+	//check the order status whether is paied
+	orderID := ctx.Params(":orderId")
+	id, _ := strconv.Atoi(orderID)
+	if has, order := GetOrderByOrderId(x, int64(id)); has {
+		if order.OrderStatus == model.ORDER_STATUS_NOT_PAYED {
 
-func alipaySubmitOrder(client alipay.Client, ctx *macaron.Context) {
+			//get the buyer
+			_, buyer := GetSessionUser(sess)
+			payType := ctx.Params(":payType")
+			if payType == model.AliPay {
+				AlipaySubmitOrder(ctx, x, client, buyer, order)
+			} else {
 
-	form := client.Form(alipay.Options{
-		OrderId:  "123",   // 唯一订单号
-		Fee:      99.8,    // 价格
-		NickName: "翱翔大空",  // 用户昵称，支付页面显示用
-		Subject:  "充值100", // 支付描述，支付页面显示用
-	})
-	log.Printf(form)
-	// ctx.HTMLString(form)
+			}
 
+		} else {
+			return
+		}
+
+	} else {
+		ctx.Data["msg"] = "订单不存在"
+		ctx.HTML(200, "error")
+	}
+
+}
+
+/*
+ AlipaySubmitOrder impletation
+*/
+func AlipaySubmitOrder(ctx *macaron.Context, x *xorm.Engine, client alipay.Client, user *model.User, order *model.StockOrder) {
+	var typeName = "周"
+	if order.ProductType == int8(1) {
+		typeName = "月"
+	}
+	subject := fmt.Sprintf("【%s】订阅支付", typeName)
+	opts := alipay.Options{
+		OrderId:  order.OutTradeNo,           // 唯一订单号
+		Fee:      float32(order.OrderAmount), // 价格
+		NickName: user.NickName,              // 用户昵称，支付页面显示用
+		Subject:  subject,                    // 支付描述，支付页面显示用
+	}
+	fmt.Println("------pay with alipay ----------")
+	form := client.Form(opts)
+	ctx.Data["form"] = template.HTML(form)
+	ctx.HTML(200, "alipay")
+}
+
+/*
+
+ */
+func AlipayNotifyHandler(ctx *macaron.Context, x *xorm.Engine, r *redis.Client, client alipay.Client) {
+	result := client.NativeReturn(ctx.Req.Request)
+	fmt.Println("alipay result:", result)
+	if result.Status == 1 { //付款成功，处理订单
+		//处理订单
+		OrderPayed(x.NewSession(), r, result.OrderNo, model.AliPay)
+	} else {
+		//TODO:fail to pay
+	}
 }
 
 //
@@ -60,39 +109,6 @@ func wxNewAppTrans() *wxpay.AppTrans {
 	appTrans, err := wxpay.NewAppTrans(cfg)
 	Chk(err)
 	return appTrans
-}
-
-/*
-支付宝预下单
-*
-*/
-func WxCreatePrepayOrder(order *model.StockOrder, user *model.User, ctx *macaron.Context, x *xorm.Engine, log *log.Logger) {
-
-	var prepayId string
-	var err error
-	appTrans := wxNewAppTrans()
-
-	var desc string
-
-	var ts = time.Now().Unix() % 0xFFFFFF
-	var outTradeNo = fmt.Sprintf("%s%06x", Hex(order.Id), ts)
-
-	reg := regexp.MustCompile("[<>&\"]")
-	desc = string(reg.ReplaceAll([]byte(desc), []byte("|")))
-
-	//获取prepay id，手机端得到prepay id后加上验证就可以使用这个id发起支付调用
-	// var payAmount = (order.OrderAmount - order.BonusAmount) * 100
-	prepayId, err = appTrans.Submit(outTradeNo, order.PayAmount, desc, SERVER_IP, user.OpenId)
-	Chk(err)
-
-	//预支付
-	err = UpdateOrderTradeNo(x, order, outTradeNo, "weixin", prepayId)
-
-	Chk(err)
-
-	//加上Sign，已方便手机直接调用
-	payRequest := appTrans.NewPaymentRequest(prepayId)
-	ctx.JSON(200, payRequest)
 }
 
 func WxQueryPayResult(ctx *macaron.Context) {
@@ -175,24 +191,13 @@ func WxNotifyHandler(ctx *macaron.Context, x *xorm.Engine, log *log.Logger) (int
 	return 200, string(s)
 }
 
-//测试支付路由
-func DevPayHandler(ctx *macaron.Context, x *xorm.Engine, r *redis.Client) {
-
-	orderId, _ := strconv.Atoi(ctx.Params(":orderId"))
-	payType := ctx.Params(":payType")
-	_, msg := OrderPayed(x, r, orderId, payType)
-	log.Printf("%s", msg)
-	ctx.Data["msg"] = msg
-	ctx.HTML(200, "follow_step3")
-}
-
-/**
-订单处理*
-**/
-func OrderPayed(x *xorm.Engine, r *redis.Client, orderId int, payType string) (bool, string) {
+/*
+ OrderPayed 订单支付成功处理
+*/
+func OrderPayed(s *xorm.Session, r *redis.Client, OutTradeNo string, payType string) (bool, string) {
 
 	order := new(model.StockOrder)
-	if has, _ := x.Id(orderId).Get(order); has {
+	if has, _ := s.Where("out_trade_no=?", OutTradeNo).Get(order); has {
 		//判断是否已经支付
 		if order.OrderStatus != 0 {
 			return false, "订单状态异常，请检查订单"
@@ -202,7 +207,6 @@ func OrderPayed(x *xorm.Engine, r *redis.Client, orderId int, payType string) (b
 	}
 
 	now := time.Now()
-	s := x.NewSession()
 	s.Begin()
 	defer s.Close()
 
@@ -224,7 +228,7 @@ func OrderPayed(x *xorm.Engine, r *redis.Client, orderId int, payType string) (b
 	}
 	uf.FollowStatus = 0
 	//开始更新
-	_, err := s.Id(orderId).Update(order)
+	_, err := s.ID(order.Id).Update(order)
 	if err != nil {
 		log.Printf("出现异常%s", err.Error())
 		s.Rollback()
@@ -233,8 +237,8 @@ func OrderPayed(x *xorm.Engine, r *redis.Client, orderId int, payType string) (b
 
 	user := new(model.User)         //订阅人
 	followedUser := new(model.User) //被订阅人
-	x.Id(order.UserId).Get(user)
-	x.Id(order.UserId).Get(followedUser)
+	s.ID(order.UserId).Get(user)
+	s.ID(order.UserId).Get(followedUser)
 
 	//更新用户的订阅量
 	userAccount := new(model.UserAccount)

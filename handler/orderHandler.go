@@ -67,8 +67,7 @@ func GenerateOrder(x *xorm.Engine, redis *redis.Client, types int, followUid, fo
 func UpdateOrderPayStatus(x *xorm.Engine, orderStatus int, outTradeNo, payType string) error {
 
 	log.Printf("修改订单状态%s,%d,%s", outTradeNo, orderStatus, payType)
-	order := GetOrderByOutTradeNo(x, outTradeNo)
-	if order != nil && order.OrderStatus == model.ORDER_STATUS_NOT_PAYED {
+	if has, order := GetOrderByOutTradeNo(x, outTradeNo); has && order.OrderStatus == model.ORDER_STATUS_NOT_PAYED {
 		order.OrderStatus = model.ORDER_STATUS_PAYED
 		order.PayTime = time.Now()
 		order.PayType = payType
@@ -88,16 +87,20 @@ func UpdateOrderPayStatus(x *xorm.Engine, orderStatus int, outTradeNo, payType s
 	}
 }
 
+//get the order by orderId
+func GetOrderByOrderId(x *xorm.Engine, orderId int64) (bool, *model.StockOrder) {
+	order := new(model.StockOrder)
+	has, _ := x.ID(orderId).Get(order)
+	return has, order
+}
+
 /**
 根据外部订单号查询订单
 **/
-func GetOrderByOutTradeNo(x *xorm.Engine, outTradeNo string) *model.StockOrder {
+func GetOrderByOutTradeNo(x *xorm.Engine, outTradeNo string) (bool, *model.StockOrder) {
 	order := new(model.StockOrder)
-	if has, _ := x.Where("out_trade_no=?", outTradeNo).Get(order); has {
-		return order
-	} else {
-		return nil
-	}
+	has, _ := x.Where("out_trade_no=?", outTradeNo).Get(order)
+	return has, order
 }
 
 /**

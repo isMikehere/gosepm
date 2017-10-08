@@ -271,14 +271,6 @@ func webgo() {
 		//check login status
 		u := sess.Get("user")
 		login := false
-		//dev
-		if macaron.Env == macaron.DEV {
-			u = new(model.User)
-			x.ID(1).Get(u)
-			sess.Set("user", u)
-			login = true
-			fmt.Printf("dev-user:%s", u)
-		}
 
 		if u != nil {
 			login = true
@@ -294,9 +286,10 @@ func webgo() {
 		//filter the resouce
 		if !login {
 			url := ctx.Req.RequestURI
-			fmt.Printf("origin url: %s||<>:%s \n", url, strings.Compare(url, "/"))
 			if strings.Contains(url, "/login") ||
 				strings.Contains(url, "test.htm") ||
+				strings.Contains(url, "alipay/notify") ||
+				strings.Contains(url, "wx/notify") ||
 				(strings.Compare(url, "/") == 0) ||
 				strings.Contains(url, "/register.htm") ||
 				strings.Contains(url, "/mobileCode/") ||
@@ -392,14 +385,14 @@ func webgo() {
 	m.Group("/stock", func() {
 		m.Get("/:stockCode", handler.Stock5StageHander)
 	})
+
 	//支付相关
-	if macaron.Env == macaron.DEV {
-		// m.Get("/pay/:payType/:orderId", handler.DevPayHandler)
-		m.Post("/pay/:payType/:orderId", handler.WxCreatePrepayOrder)
-	} else {
-		// m.Post("/pay/:payType/:orderId", handler.AlipayNotifyHandler)
-	}
-	// m.Post("/alipay/notify", handler.AlipayNotifyHandler)
+	m.Group("/pay", func() {
+		m.Post("/:payType/:orderId", handler.Pay)
+		m.Get("/:payType/:orderId", handler.Pay)
+		m.Post("/alipay/finish", handler.AlipayNotifyHandler)
+		m.Post("/alipay/notify", handler.AlipayNotifyHandler)
+	})
 
 	// m.Group("/weixin", func() {
 	// 	m.Post("/order/(?P<id>[0-9a-z]{24})", midOrder, hanlder.WxCreatePrepayOrder)
@@ -412,11 +405,15 @@ func webgo() {
 	m.Get("/rank/:page", handler.RankListHandler)
 
 	//***************test ******************
-	m.Get("/test.htm", func(ctx *macaron.Context, x *xorm.Engine, r *redis.Client) {
-		ctx.Data["data"] = "<html><body><p>ok</p></body></html>"
-		data := "<html><body><p>ok</p></body></html>"
-		// ctx.HTML(200, "test")
-		ctx.HTMLString("test", data)
+	m.Get("/test.htm", func(ctx *macaron.Context, alipayClient alipay.Client, x *xorm.Engine, r *redis.Client) {
+		form := alipayClient.Form(alipay.Options{
+			OrderId:  "123",   // 唯一订单号
+			Fee:      0.01,    // 价格
+			NickName: "翱翔大空",  // 用户昵称，支付页面显示用
+			Subject:  "充值100", // 支付描述，支付页面显示用
+		})
+		ctx.Data["form"] = template.HTML(form)
+		ctx.HTML(200, "test")
 	})
 	m.Get("/searchStock.htm", func(ctx *macaron.Context, x *xorm.Engine, r *redis.Client) {
 		stocks := handler.GetRedisStockCodes(r)

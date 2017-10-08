@@ -369,3 +369,16 @@ func TestFormatInt(t *testing.T) {
 		})
 	}
 }
+
+func Test_createTmp(t *testing.T) {
+	tests := []struct {
+		name string
+	}{
+		{name: "string"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			createTmp()
+		})
+	}
+}
