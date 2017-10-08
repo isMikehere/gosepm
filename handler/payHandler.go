@@ -59,11 +59,11 @@ func AlipaySubmitOrder(ctx *macaron.Context, x *xorm.Engine, client alipay.Clien
 	if order.ProductType == int8(1) {
 		typeName = "月"
 	}
-	subject := fmt.Sprintf("【%s】订阅支付", typeName)
+	subject := typeName + "订阅支付"
 	opts := alipay.Options{
 		OrderId:  order.OutTradeNo,           // 唯一订单号
 		Fee:      float32(order.OrderAmount), // 价格
-		NickName: user.NickName,              // 用户昵称，支付页面显示用
+		NickName: user.UserName,              // 用户昵称，支付页面显示用
 		Subject:  subject,                    // 支付描述，支付页面显示用
 	}
 	fmt.Println("------pay with alipay ----------")
