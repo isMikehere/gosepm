@@ -1,16 +1,1 @@
-
-{{template "header"}}
-<script>
-
-            $.getJSON('http://localhost:4000/pageable/2', function (json) {
-               var s= $.parseJSON(json)
-                 values = json.Data;
-            });
-
-</script>
-
-<table>
-<tr>
-         
-</tr>
-</table>
+{{.data}}

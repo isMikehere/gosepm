@@ -13,3 +13,14 @@ func logg() {
 
 	// fmt.Print(&buf)
 }
+
+//root
+type Root struct {
+}
+
+//reference for root
+type MyData struct {
+	ID   string
+	name string
+	*Root
+}

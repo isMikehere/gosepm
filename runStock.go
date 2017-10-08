@@ -13,6 +13,7 @@ import (
 	"./db"
 	"./handler"
 	"./model"
+	"github.com/ascoders/alipay"
 	"github.com/go-macaron/binding"
 	"github.com/go-macaron/cache"
 	"github.com/go-macaron/captcha"
@@ -78,8 +79,25 @@ func initXormEngin() {
 	m.Map(engine)
 }
 
-/*
-**/
+/**
+初始化alipay sdk
+*/
+func initAlipay() {
+	log.Printf("初始化支付宝sdk...")
+	alipay := alipay.Client{
+		Partner:   model.PID,       // 合作者ID
+		Key:       model.AliKey,    // 合作者私钥
+		ReturnUrl: model.ReturnURL, // 同步返回地址
+		NotifyUrl: model.NotifyURL, // 网站异步返回地址
+		Email:     model.Email,     // 网站卖家邮箱地址
+	}
+	m.Map(alipay)
+	log.Printf("初始化支付宝sdk完毕")
+}
+
+/**
+初始化redis 客户端
+*/
 func initRedisClient() {
 
 	//映射redis
@@ -266,7 +284,10 @@ func webgo() {
 		//filter the resouce
 		if !login {
 			url := ctx.Req.RequestURI
+			fmt.Printf("origin url: %s||<>:%s \n", url, strings.Compare(url, "/"))
 			if strings.Contains(url, "/login") ||
+				strings.Contains(url, "test.htm") ||
+				(strings.Compare(url, "/") == 0) ||
 				strings.Contains(url, "/register.htm") ||
 				strings.Contains(url, "/mobileCode/") ||
 				strings.Contains(url, "/index.htm") ||
@@ -286,13 +307,14 @@ func webgo() {
 
 	/*------------------------routes-------------------------------------------*/
 
+	m.Get("/", handler.IndexHandler)
+	m.Get("/index.htm", handler.IndexHandler)
 	m.Get("/login.htm", handler.LoginGetHandler)
 	m.Post("/login.htm", binding.Bind(model.User{}), handler.LoginPostHandler)
 	m.Post("/logout.htm", handler.LogoutHandler)
 	m.Get("/logout.htm", handler.LogoutHandler)
 	m.Get("/register.htm", handler.RegisterGetHandler)
 	m.Post("/register.htm", binding.Bind(model.User{}), handler.RegisterPostHandler)
-	m.Get("/index.htm", handler.IndexHandler)
 	m.Get("/error.htm", func(ctx *macaron.Context) {
 		ctx.HTML(200, "error")
 	})
@@ -362,11 +384,12 @@ func webgo() {
 	})
 	//支付相关
 	if macaron.Env == macaron.DEV {
-		m.Get("/pay/:payType/:orderId", handler.DevPayHandler)
+		// m.Get("/pay/:payType/:orderId", handler.DevPayHandler)
+		m.Post("/pay/:payType/:orderId", handler.WxCreatePrepayOrder)
 	} else {
-		m.Post("/pay/:payType/:orderId", handler.AlipayNotifyHandler)
+		// m.Post("/pay/:payType/:orderId", handler.AlipayNotifyHandler)
 	}
-	m.Post("/alipay/notify", handler.AlipayNotifyHandler)
+	// m.Post("/alipay/notify", handler.AlipayNotifyHandler)
 
 	// m.Group("/weixin", func() {
 	// 	m.Post("/order/(?P<id>[0-9a-z]{24})", midOrder, hanlder.WxCreatePrepayOrder)
@@ -380,16 +403,15 @@ func webgo() {
 
 	//***************test ******************
 	m.Get("/test.htm", func(ctx *macaron.Context, x *xorm.Engine, r *redis.Client) {
-
-		ctx.HTML(200, "ac")
+		ctx.Data["data"] = "<html><body><p>ok</p></body></html>"
+		data := "<html><body><p>ok</p></body></html>"
+		// ctx.HTML(200, "test")
+		ctx.HTMLString("test", data)
 	})
 	m.Get("/searchStock.htm", func(ctx *macaron.Context, x *xorm.Engine, r *redis.Client) {
 		stocks := handler.GetRedisStockCodes(r)
 		ctx.JSON(200, stocks)
 	})
-
-	//测试分页
-	m.Get("/pageable/:page", handler.TestPage)
 
 	//***************test *****************
 	//----------------------对外接口----------------------------------------------/
@@ -407,9 +429,10 @@ func main() {
 
 	SyncTable(new(model.VerifyCode))
 	initRedisClient()
-	//·
+	initAlipay()
 	var numCores = flag.Int("n", 2, "number of CPU cores to use")
 	flag.Parse()
+	// os.Setenv("PORT", "4001")
 	runtime.GOMAXPROCS(*numCores)
 	// initCache()
 	//开启定时任务

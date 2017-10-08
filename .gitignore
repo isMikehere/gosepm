@@ -1,6 +1,6 @@
 .vscode/
 debug
 debug_test
-gosepm
+./gosepm
 .idea/
 gosepm.iml
