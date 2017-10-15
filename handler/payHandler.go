@@ -62,10 +62,10 @@ func AlipaySubmitOrder(ctx *macaron.Context, x *xorm.Engine, client alipay.Clien
 	}
 	subject := typeName + "订阅支付"
 	opts := alipay.Options{
-		OrderId:  order.OutTradeNo,           // 唯一订单号
-		Fee:      float32(order.OrderAmount), // 价格
-		NickName: user.UserName,              // 用户昵称，支付页面显示用
-		Subject:  subject,                    // 支付描述，支付页面显示用
+		OrderId:  strings.Replace(order.OutTradeNo, "-", "", -1), // 唯一订单号
+		Fee:      float32(order.OrderAmount),                     // 价格
+		NickName: user.UserName,                                  // 用户昵称，支付页面显示用
+		Subject:  subject,                                        // 支付描述，支付页面显示用
 	}
 	fmt.Println("------pay with alipay ----------")
 	form := client.Form(opts)

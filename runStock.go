@@ -290,6 +290,8 @@ func webgo() {
 			if strings.Contains(url, "/login") ||
 				strings.Contains(url, "test.htm") ||
 				strings.Contains(url, "alipay/notify") ||
+				strings.Contains(url, "alipay/notify") ||
+				strings.Contains(url, "alipay/test") ||
 				strings.Contains(url, "wx/notify") ||
 				(strings.Compare(url, "/") == 0) ||
 				strings.Contains(url, "/register.htm") ||
@@ -393,6 +395,9 @@ func webgo() {
 		m.Get("/:payType/:orderId", handler.Pay)
 		m.Post("/alipay/finish", handler.AlipayFinishHandler)
 		m.Post("/alipay/notify", handler.AlipayNotifyHandler)
+		m.Post("/alipay/test", func(ctx *macaron.Context) {
+			ctx.JSON(200, "ok")
+		})
 	})
 
 	// m.Group("/weixin", func() {
