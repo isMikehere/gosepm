@@ -68,7 +68,9 @@ func AlipaySubmitOrder(ctx *macaron.Context, x *xorm.Engine, client alipay.Clien
 		Subject:  subject,                                        // 支付描述，支付页面显示用
 	}
 	fmt.Println("------pay with alipay ----------")
+
 	form := client.Form(opts)
+	fmt.Println(form)
 	ctx.Data["form"] = template.HTML(form)
 	ctx.HTML(200, "alipay")
 }
