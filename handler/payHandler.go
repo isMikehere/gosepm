@@ -56,11 +56,11 @@ func Pay(ctx *macaron.Context, x *xorm.Engine, sess session.Store, client alipay
  AlipaySubmitOrder impletation
 */
 func AlipaySubmitOrder(ctx *macaron.Context, x *xorm.Engine, client alipay.Client, user *model.User, order *model.StockOrder) {
-	var typeName = "周"
-	if order.ProductType == int8(1) {
-		typeName = "月"
-	}
-	subject := typeName + "订阅支付"
+	// var typeName = "周"
+	// if order.ProductType == int8(1) {
+	// 	typeName = "月"
+	// }
+	subject := "subscribe"
 	opts := alipay.Options{
 		OrderId:  strings.Replace(order.OutTradeNo, "-", "", -1), // 唯一订单号
 		Fee:      float32(order.OrderAmount),                     // 价格

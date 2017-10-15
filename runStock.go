@@ -419,8 +419,8 @@ func webgo() {
 		form := alipayClient.Form(alipay.Options{
 			OrderId:  orderId, // 唯一订单号
 			Fee:      0.01,    // 价格
-			NickName: "翱翔大空",  // 用户昵称，支付页面显示用
-			Subject:  "充值100", // 支付描述，支付页面显示用
+			NickName: "mike",  // 用户昵称，支付页面显示用
+			Subject:  "100",   // 支付描述，支付页面显示用
 		})
 		i, _ := strconv.Atoi(orderId)
 		r.Set("orderId", strconv.Itoa(i+1), 0)
