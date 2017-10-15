@@ -22,10 +22,11 @@ import (
 )
 
 /*
-Pay rouater
+Pay router
 */
+//noinspection GoUnusedExportedFunction
 func Pay(ctx *macaron.Context, x *xorm.Engine, sess session.Store, client alipay.Client) {
-	//check the order status whether is paied
+	//check the order status whether is payed
 	orderID := ctx.Params(":orderId")
 	id, _ := strconv.Atoi(orderID)
 	if has, order := GetOrderByOrderId(x, int64(id)); has {
@@ -75,33 +76,37 @@ func AlipaySubmitOrder(ctx *macaron.Context, x *xorm.Engine, client alipay.Clien
 /*
 AlipayFinishHandler sync callback
 */
-func AlipayFinishHandler(ctx *macaron.Context, x *xorm.Engine, r *redis.Client, client alipay.Client) string {
+func AlipayFinishHandler(ctx *macaron.Context, x *xorm.Engine, r *redis.Client, client alipay.Client) {
 	result := client.NativeReturn(ctx.Req.Request)
 	fmt.Println("alipay result:", result)
+	flag := "fail"
 	if result.Status == 1 { //付款成功，处理订单
 		//处理订单
 		OrderPayed(x.NewSession(), r, result.OrderNo, model.AliPay)
-		return "ok"
-	} else {
-		//TODO:fail to pay
-		return "fail"
+		flag = "ok"
 	}
+	jsonResult := new(model.JsonResult)
+	jsonResult.Code = "200"
+	jsonResult.Data = flag
+	ctx.JSON(200, jsonResult)
 }
 
 /*
 AlipayNotifyHandler async callback
 */
-func AlipayNotifyHandler(ctx *macaron.Context, x *xorm.Engine, r *redis.Client, client alipay.Client) string {
+func AlipayNotifyHandler(ctx *macaron.Context, x *xorm.Engine, r *redis.Client, client alipay.Client) {
 	result := client.NativeNotify(ctx.Req.Request)
 	fmt.Println("alipay result:", result)
+	flag := "fail"
 	if result.Status == 1 { //付款成功，处理订单
 		//处理订单
 		OrderPayed(x.NewSession(), r, result.OrderNo, model.AliPay)
-		return "ok"
-	} else {
-		//TODO:fail to pay
-		return "fail"
+		flag = "ok"
 	}
+	jsonResult := new(model.JsonResult)
+	jsonResult.Code = "200"
+	jsonResult.Data = flag
+	ctx.JSON(200, jsonResult)
 }
 
 //
@@ -220,75 +225,74 @@ func OrderPayed(s *xorm.Session, r *redis.Client, OutTradeNo string, payType str
 		if order.OrderStatus != 0 {
 			return false, "订单状态异常，请检查订单"
 		}
-	} else {
-		return false, "订单不存在"
-	}
 
-	now := time.Now()
-	s.Begin()
-	defer s.Close()
+		now := time.Now()
+		s.Begin()
+		defer s.Close()
 
-	order.OrderStatus = 1
-	order.PayType = payType
-	order.PayTime = now
+		order.OrderStatus = 1
+		order.PayType = payType
+		order.PayTime = now
 
-	uf := new(model.UserFollow)
-	uf.UserId = order.UserId
-	uf.FollowedId = order.FollowedId
-	uf.FollowType = order.ProductType
-	uf.FollowStart = now
-	uf.OrderId = order.Id
-	var weeks = 1
-	uf.FollowEnd = now.Add(1 * 7 * 24 * time.Hour)
-	if order.ProductType == 1 {
-		weeks = 4
-		uf.FollowEnd = now.Add(4 * 7 * 24 * time.Hour)
-	}
-	uf.FollowStatus = 0
-	//开始更新
-	_, err := s.ID(order.Id).Update(order)
-	if err != nil {
-		log.Printf("出现异常%s", err.Error())
-		s.Rollback()
-		return false, "订单更新失败,请联系客服"
-	}
-
-	user := new(model.User)         //订阅人
-	followedUser := new(model.User) //被订阅人
-	s.ID(order.UserId).Get(user)
-	s.ID(order.UserId).Get(followedUser)
-
-	//更新用户的订阅量
-	userAccount := new(model.UserAccount)
-	if has, _ := s.Where("user_id=?", followedUser.Id).Get(userAccount); has {
-		userAccount.TotalFollow = userAccount.TotalFollow + 1
-		_, err = s.Id(userAccount.Id).MustCols("total_follow").Update(userAccount)
+		uf := new(model.UserFollow)
+		uf.UserId = order.UserId
+		uf.FollowedId = order.FollowedId
+		uf.FollowType = order.ProductType
+		uf.FollowStart = now
+		uf.OrderId = order.Id
+		var weeks = 1
+		uf.FollowEnd = now.Add(1 * 7 * 24 * time.Hour)
+		if order.ProductType == 1 {
+			weeks = 4
+			uf.FollowEnd = now.Add(4 * 7 * 24 * time.Hour)
+		}
+		uf.FollowStatus = 0
+		//开始更新
+		_, err := s.ID(order.Id).Update(order)
 		if err != nil {
 			log.Printf("出现异常%s", err.Error())
 			s.Rollback()
 			return false, "订单更新失败,请联系客服"
 		}
-	} else {
-		s.Rollback()
-	}
 
-	// 【金修网络】恭喜您：%s已经成功订阅您的为期%d周股票模拟交易提醒，有效期为%s-%s。请及时处理详情请参考订单须知。
-	messageLog := new(model.MessageLog)
-	messageLog.Mobile = followedUser.Mobile
-	messageLog.InBatchId = time.Now().Format(model.DATE_ORDER_FORMAT)
-	messageLog.Content =
-		fmt.Sprintf(model.TOBEFOLLOWED_OK_MSG, user.NickName, weeks, uf.FollowStart.Format(model.DATE_TIME_FORMAT),
-			uf.FollowEnd.Format(model.DATE_TIME_FORMAT))
-	messageLog.SendStatus = 0
-	//发布消息队列
-	PublishMessage(r, model.R_MSG_SEND_CHAN, messageLog)
+		user := new(model.User)         //订阅人
+		followedUser := new(model.User) //被订阅人
+		s.ID(order.UserId).Get(user)
+		s.ID(order.UserId).Get(followedUser)
 
-	_, err = s.Insert(uf)
-	if err != nil {
-		log.Printf("出现异常%s", err.Error())
-		s.Rollback()
-		return false, "订单更新失败,请联系客服"
+		//更新用户的订阅量
+		userAccount := new(model.UserAccount)
+		if has, _ := s.Where("user_id=?", followedUser.Id).Get(userAccount); has {
+			userAccount.TotalFollow = userAccount.TotalFollow + 1
+			_, err = s.Id(userAccount.Id).MustCols("total_follow").Update(userAccount)
+			if err != nil {
+				log.Printf("出现异常%s", err.Error())
+				s.Rollback()
+				return false, "订单更新失败,请联系客服"
+			}
+		} else {
+			s.Rollback()
+		}
+
+		// 【金修网络】恭喜您：%s已经成功订阅您的为期%d周股票模拟交易提醒，有效期为%s-%s。请及时处理详情请参考订单须知。
+		messageLog := new(model.MessageLog)
+		messageLog.Mobile = followedUser.Mobile
+		messageLog.InBatchId = time.Now().Format(model.DATE_ORDER_FORMAT)
+		messageLog.Content =
+			fmt.Sprintf(model.TOBEFOLLOWED_OK_MSG, user.NickName, weeks, uf.FollowStart.Format(model.DATE_TIME_FORMAT),
+				uf.FollowEnd.Format(model.DATE_TIME_FORMAT))
+		messageLog.SendStatus = 0
+		//发布消息队列
+		PublishMessage(r, model.R_MSG_SEND_CHAN, messageLog)
+
+		_, err = s.Insert(uf)
+		if err != nil {
+			log.Printf("出现异常%s", err.Error())
+			s.Rollback()
+			return false, "订单更新失败,请联系客服"
+		}
+		s.Commit()
+		return true, "订单更新成功"
 	}
-	s.Commit()
-	return true, "订单更新成功"
+	return false, "更新订单失败"
 }

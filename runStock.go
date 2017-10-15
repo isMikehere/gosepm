@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"log"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -406,12 +407,19 @@ func webgo() {
 
 	//***************test ******************
 	m.Get("/test.htm", func(ctx *macaron.Context, alipayClient alipay.Client, x *xorm.Engine, r *redis.Client) {
+		orderId := r.Get("orderId").Val()
+		if orderId == "" {
+			orderId = "1"
+		}
 		form := alipayClient.Form(alipay.Options{
-			OrderId:  "123",   // 唯一订单号
+			OrderId:  orderId, // 唯一订单号
 			Fee:      0.01,    // 价格
 			NickName: "翱翔大空",  // 用户昵称，支付页面显示用
 			Subject:  "充值100", // 支付描述，支付页面显示用
 		})
+		i, _ := strconv.Atoi(orderId)
+		r.Set("orderId", strconv.Itoa(i+1), 0)
+		fmt.Printf("支付表单:%s", form)
 		ctx.Data["form"] = template.HTML(form)
 		ctx.HTML(200, "test")
 	})

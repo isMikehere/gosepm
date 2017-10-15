@@ -3,12 +3,13 @@ package model
 import "time"
 
 const (
-	DriverOfMysql     = "mysql"
-	DataSourceOfMysql = "root:zhsepm!@#$%@tcp(106.14.112.157:3306)/sepm?parseTime=true"
-	// DataSourceOfMysql = "root:root@tcp(localhost:3306)/sepm?parseTime=true"
-	RedisHost = "106.14.112.157:6379"
-	// RedisHost = "localhost:6379"
-	RedisPass = "xceof"
+	DriverOfMysql = "mysql"
+	// DataSourceOfMysql = "root:zhsepm!@#$%@tcp(106.14.112.157:3306)/sepm?parseTime=true"
+	DataSourceOfMysql = "root:root@tcp(localhost:3306)/sepm?parseTime=true"
+	// RedisHost = "106.14.112.157:6379"
+	RedisHost = "localhost:6379"
+	RedisPass = ""
+	// RedisPass = "xceof"
 )
 
 const (
