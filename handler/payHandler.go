@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ascoders/alipay"
 	"github.com/go-macaron/session"
+	"github.com/isMikehere/alipay"
 
 	"../model"
 

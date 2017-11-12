@@ -14,7 +14,6 @@ import (
 	"./db"
 	"./handler"
 	"./model"
-	"github.com/ascoders/alipay"
 	"github.com/go-macaron/binding"
 	"github.com/go-macaron/cache"
 	"github.com/go-macaron/captcha"
@@ -23,6 +22,7 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/go-xorm/core"
 	"github.com/go-xorm/xorm"
+	"github.com/isMikehere/alipay"
 	macaron "gopkg.in/macaron.v1"
 )
 
